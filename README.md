@@ -1,11 +1,14 @@
 # My Budget
 
-A private, single-user web app for tracking your monthly spending budget.
-Everything runs in your browser — there's no server and no account. Your data
-is saved in the browser's `localStorage`, so it stays on your device only.
+A private web app for tracking your monthly spending budget, with a real
+backend and login. Your data is stored server-side in SQLite and scoped to
+your account, so it syncs across every device you sign in from.
 
 ## Features
 
+- **Login / account** — username + password auth (passwords hashed with scrypt).
+- **Private by default** — the first account registers freely; after that,
+  registration is closed unless you set a `SIGNUP_CODE` (see below).
 - **Hamburger settings menu** — set your monthly budget total.
 - **Weekly sliders** — distribute the monthly budget across the weeks of the month.
 - **Daily sliders** — set each day's spending limit within a week.
@@ -16,18 +19,40 @@ is saved in the browser's `localStorage`, so it stays on your device only.
 - **Month navigation** — move between months with the arrows in the top bar.
 - **Per-entry history** — each spend is listed under its day and can be removed.
 
+## Architecture
+
+- **Backend:** Node.js + Express (`server/`), serving a JSON API and the
+  static frontend.
+- **Database:** SQLite via `better-sqlite3`, stored at `data/budget.db`.
+- **Auth:** httpOnly session cookies; sessions and users live in the database.
+- **Frontend:** plain HTML/CSS/JS in `public/`, talking to the API.
+
 ## Running it
 
-No build step or dependencies. Either:
+```bash
+npm install
+npm start
+# then open http://localhost:3000
+```
 
-1. **Just open the file** — double-click `index.html` (or drag it into your browser).
-2. **Or serve it locally** (recommended so `localStorage` is stable per origin):
+The first time you open it, you'll be sent to the login page — click
+**Create one** to make your account. That first account is the owner.
 
-   ```bash
-   # Python 3
-   python3 -m http.server 8000
-   # then open http://localhost:8000
-   ```
+### Configuration (environment variables)
+
+| Variable        | Default       | Purpose                                                        |
+| --------------- | ------------- | -------------------------------------------------------------- |
+| `PORT`          | `3000`        | Port to listen on.                                             |
+| `DATA_DIR`      | `./data`      | Where the SQLite database is stored.                           |
+| `SIGNUP_CODE`   | *(unset)*     | If set, allows extra accounts to register using this code.     |
+| `COOKIE_SECURE` | `false`       | Set to `true` when serving over HTTPS so cookies are secured.  |
+
+After your account exists, new sign-ups are blocked unless `SIGNUP_CODE` is
+set — keeping the instance private to you.
+
+> **Deploying:** run it behind HTTPS (e.g. a reverse proxy) and set
+> `COOKIE_SECURE=true`. Keep the `data/` directory backed up — it holds your
+> database. The old browser-only version is gone; data now lives server-side.
 
 ## How budgeting works
 
@@ -42,15 +67,14 @@ No build step or dependencies. Either:
 
 ## Data & privacy
 
-- All data lives in `localStorage` under the key `myBudget.v1`.
-- Clearing your browser data, or using a different browser/device, starts fresh.
-- To back up, you can copy that value from your browser's dev tools, or export
-  it (a future enhancement — see below).
+- All data lives server-side in `data/budget.db`, scoped to your user account.
+- Sign in from any device to see the same data.
+- Back up by copying the `data/` directory.
 
 ## Ideas for next steps
 
-- Export / import your data as a JSON file (for backup and moving devices).
 - Categories (groceries, gas, eating out) with per-category budgets.
 - Notes on each spending entry.
 - A small chart of spending over the month.
-- Optional cloud sync if you ever want it on multiple devices.
+- Export / import your data as a JSON file.
+- Password change / account management screen.

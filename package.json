@@ -1,0 +1,17 @@
+{
+  "name": "my-budget",
+  "version": "1.0.0",
+  "description": "A private, single-user monthly budget tracker with login.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.19.2"
+  }
+}

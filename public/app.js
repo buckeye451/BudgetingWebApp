@@ -1,9 +1,8 @@
 /* ============================================================
-   My Budget — a private, browser-only monthly budget tracker.
-   All data is stored in localStorage on this device only.
+   My Budget — a private monthly budget tracker.
+   Data is stored on the server (SQLite), scoped to the logged-in
+   user, and synced across devices.
    ============================================================ */
-
-const STORAGE_KEY = "myBudget.v1";
 
 /* ---------- Date helpers ---------- */
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -44,7 +43,7 @@ function getWeeksOfMonth(year, month) {
 }
 
 /* ---------- State ---------- */
-let state = loadState();
+let state = { months: {} };
 
 // View state (not persisted)
 const now = new Date();
@@ -52,22 +51,40 @@ let viewYear = now.getFullYear();
 let viewMonth = now.getMonth(); // 0-indexed
 let activeWeekIndex = 0;
 
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.warn("Could not load saved data:", e);
+/* Fetch this user's data from the server. Redirects to login on 401. */
+async function loadState() {
+  const res = await fetch("/api/data");
+  if (res.status === 401) {
+    location.href = "/login.html";
+    return { months: {} };
   }
-  return { months: {} };
+  if (!res.ok) {
+    console.warn("Could not load data:", res.status);
+    return { months: {} };
+  }
+  return res.json();
 }
 
+/* Persist the whole state to the server, debounced so rapid changes
+   (e.g. dragging a slider) collapse into a single request. */
+let saveTimer = null;
+let saveStatusEl = null;
 function saveState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {
-    console.warn("Could not save data:", e);
-  }
+  if (saveStatusEl) saveStatusEl.textContent = "Saving…";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      const res = await fetch("/api/data", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state),
+      });
+      if (res.status === 401) { location.href = "/login.html"; return; }
+      if (saveStatusEl) saveStatusEl.textContent = res.ok ? "Saved" : "Save failed";
+    } catch (e) {
+      if (saveStatusEl) saveStatusEl.textContent = "Offline — not saved";
+    }
+  }, 400);
 }
 
 /* Returns the data object for the currently viewed month, creating a
@@ -471,13 +488,33 @@ document.getElementById("nextMonth").addEventListener("click", () => {
   render();
 });
 
+/* Log out button (in the settings drawer). */
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try { await fetch("/api/logout", { method: "POST" }); } catch (e) { /* ignore */ }
+  location.href = "/login.html";
+});
+
 /* On load: jump to the week containing today, if we're viewing this month. */
-(function initActiveWeek() {
+function initActiveWeek() {
   const weeks = getWeeksOfMonth(viewYear, viewMonth);
   const tk = todayKey();
   weeks.forEach((week, i) => {
     if (week.some(d => d.dateKey === tk)) activeWeekIndex = i;
   });
-})();
+}
 
-render();
+/* ---------- Startup: confirm auth, load data, then render ---------- */
+async function init() {
+  saveStatusEl = document.getElementById("saveStatus");
+
+  const meRes = await fetch("/api/me");
+  if (!meRes.ok) { location.href = "/login.html"; return; }
+  const me = await meRes.json();
+  document.getElementById("usernameLabel").textContent = me.username;
+
+  state = await loadState();
+  initActiveWeek();
+  render();
+}
+
+init();

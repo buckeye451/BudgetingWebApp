@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in · My Budget</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="auth-body">
+  <main class="auth-card">
+    <h1 class="auth-title">My Budget</h1>
+    <p class="auth-sub" id="authSub">Sign in to your account</p>
+
+    <form id="authForm" class="auth-form">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" required />
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+
+      <div id="codeField" class="hidden">
+        <label for="code">Signup code</label>
+        <input id="code" name="code" autocomplete="off" />
+      </div>
+
+      <p id="authError" class="auth-error hidden"></p>
+
+      <button type="submit" class="add-btn auth-submit" id="submitBtn">Sign in</button>
+    </form>
+
+    <p class="auth-toggle">
+      <span id="toggleText">Need an account?</span>
+      <button type="button" id="toggleMode" class="link-btn">Create one</button>
+    </p>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>
