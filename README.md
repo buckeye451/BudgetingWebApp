@@ -98,6 +98,26 @@ feel: Share → *Add to Home Screen*.
   ```
 - Back up your data anytime with `fly ssh console -C "cat /data/budget.db" > backup.db`.
 
+### Auto-deploy from GitHub
+
+`.github/workflows/fly-deploy.yml` redeploys the app automatically on every
+push to the default branch (you can also trigger it manually from the repo's
+**Actions** tab). To enable it, give GitHub a Fly deploy token:
+
+1. Create a token scoped to this app:
+   ```bash
+   fly tokens create deploy -a <your-app-name>
+   ```
+2. In your GitHub repo: **Settings → Secrets and variables → Actions →
+   New repository secret**, name it `FLY_API_TOKEN`, and paste the token
+   (include the whole `FlyV1 ...` string).
+
+After that, every push deploys. Until the secret is set, the workflow will run
+but fail at the deploy step — that's expected.
+
+> The workflow triggers on the current default branch. If you rename it (e.g.
+> to `main`), update the branch name under `on.push.branches` in the workflow.
+
 ## How budgeting works
 
 1. Open the **hamburger menu** and set your **monthly budget total**.
