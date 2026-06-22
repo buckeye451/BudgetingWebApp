@@ -54,6 +54,50 @@ set — keeping the instance private to you.
 > `COOKIE_SECURE=true`. Keep the `data/` directory backed up — it holds your
 > database. The old browser-only version is gone; data now lives server-side.
 
+## Deploying to Fly.io
+
+This repo includes a `Dockerfile` and `fly.toml` ready for [Fly.io](https://fly.io).
+The SQLite database is kept on a persistent volume mounted at `/data`.
+
+**One-time setup:**
+
+1. Install the CLI and sign in:
+   ```bash
+   # macOS: brew install flyctl    (or see https://fly.io/docs/flyctl/install/)
+   fly auth signup   # or: fly auth login
+   ```
+2. Pick a unique app name and your nearest region. Edit `fly.toml`:
+   - change `app = "my-budget-changeme"` to something unique
+   - set `primary_region` to a code near you (e.g. `iad`, `lhr`, `sjc` — see
+     https://fly.io/docs/reference/regions/)
+3. Create the app and the volume that holds your data:
+   ```bash
+   fly apps create <your-app-name>
+   fly volumes create budget_data --region <your-region> --size 1
+   ```
+
+**Deploy:**
+
+```bash
+fly deploy
+```
+
+When it finishes, open `https://<your-app-name>.fly.dev` on your phone and
+tap **Create one** to make your account (the first account is the owner;
+after that, sign-ups are closed). Add it to your home screen for an app-like
+feel: Share → *Add to Home Screen*.
+
+**Notes:**
+- `COOKIE_SECURE=true` is already set (Fly serves over HTTPS), so your login
+  cookie is sent securely.
+- The app scales to zero when idle to keep costs minimal and wakes on the next
+  request — the first hit after a while may take a second or two.
+- To allow a second device/person to register later, set a signup code:
+  ```bash
+  fly secrets set SIGNUP_CODE=some-long-random-string
+  ```
+- Back up your data anytime with `fly ssh console -C "cat /data/budget.db" > backup.db`.
+
 ## How budgeting works
 
 1. Open the **hamburger menu** and set your **monthly budget total**.

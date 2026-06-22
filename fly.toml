@@ -1,0 +1,28 @@
+# Fly.io config for My Budget.
+# Change `app` to a unique name (you'll be prompted on first launch too).
+app = "my-budget-changeme"
+primary_region = "iad"   # pick one near you: https://fly.io/docs/reference/regions/
+
+[build]
+
+[env]
+  PORT = "3000"
+  DATA_DIR = "/data"
+  COOKIE_SECURE = "true"
+
+# Persistent volume that holds the SQLite database (data/budget.db -> /data).
+[mounts]
+  source = "budget_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Scale to zero when idle to keep costs ~free; wakes on the next request.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
