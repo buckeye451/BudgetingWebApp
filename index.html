@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Budget</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top bar -->
+  <header class="topbar">
+    <button id="menuBtn" class="icon-btn" aria-label="Open settings menu">
+      <span class="hamburger"></span>
+    </button>
+    <h1 id="monthTitle">My Budget</h1>
+    <div class="month-nav">
+      <button id="prevMonth" class="icon-btn small" aria-label="Previous month">&#8249;</button>
+      <button id="nextMonth" class="icon-btn small" aria-label="Next month">&#8250;</button>
+    </div>
+  </header>
+
+  <!-- Slide-out settings drawer -->
+  <div id="overlay" class="overlay hidden"></div>
+  <aside id="drawer" class="drawer">
+    <div class="drawer-header">
+      <h2>Settings</h2>
+      <button id="closeDrawer" class="icon-btn" aria-label="Close settings">&times;</button>
+    </div>
+
+    <div class="drawer-section">
+      <label for="monthlyTotal">Monthly budget total</label>
+      <div class="money-input">
+        <span class="prefix">$</span>
+        <input type="number" id="monthlyTotal" min="0" step="1" inputmode="decimal" />
+      </div>
+      <p class="hint">Set how much you can spend for the whole month.</p>
+    </div>
+
+    <div class="drawer-section">
+      <h3>Weekly allocation</h3>
+      <p class="hint">Slide to set how much of the month goes to each week.</p>
+      <div id="weeklySliders" class="slider-list"></div>
+      <button id="resetWeekly" class="link-btn">Reset to even split</button>
+    </div>
+
+    <div class="drawer-section">
+      <button id="clearMonth" class="danger-btn">Clear this month's spending</button>
+      <p class="hint">Removes all spending entries for the month shown. Budgets are kept.</p>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="content">
+    <!-- Monthly summary -->
+    <section class="summary-card">
+      <div class="summary-row">
+        <span class="summary-label">Month remaining</span>
+        <span id="monthRemaining" class="summary-value">$0.00</span>
+      </div>
+      <div class="bar"><div id="monthBar" class="bar-fill"></div></div>
+      <div class="summary-meta">
+        <span>Spent: <span id="monthSpent">$0.00</span></span>
+        <span>Budget: <span id="monthBudget">$0.00</span></span>
+      </div>
+    </section>
+
+    <!-- Week selector -->
+    <section class="week-tabs" id="weekTabs"></section>
+
+    <!-- Selected week summary -->
+    <section class="summary-card week-card">
+      <div class="summary-row">
+        <span class="summary-label" id="weekLabel">Week remaining</span>
+        <span id="weekRemaining" class="summary-value">$0.00</span>
+      </div>
+      <div class="bar"><div id="weekBar" class="bar-fill"></div></div>
+      <div class="summary-meta">
+        <span>Spent: <span id="weekSpent">$0.00</span></span>
+        <span>Budget: <span id="weekBudget">$0.00</span></span>
+      </div>
+      <div class="daily-slider-wrap">
+        <h3>Daily allocation for this week</h3>
+        <p class="hint">Slide to set each day's spending limit.</p>
+        <div id="dailySliders" class="slider-list"></div>
+        <button id="resetDaily" class="link-btn">Reset to even split</button>
+      </div>
+    </section>
+
+    <!-- Days -->
+    <section id="days" class="days"></section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
