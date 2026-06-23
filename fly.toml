@@ -1,6 +1,6 @@
 # Fly.io config for My Budget.
 # Change `app` to a unique name (you'll be prompted on first launch too).
-app = "my-budget-changeme"
+app = "budget-sam"
 primary_region = "iad"   # pick one near you: https://fly.io/docs/reference/regions/
 
 [build]
