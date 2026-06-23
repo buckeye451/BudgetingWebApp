@@ -215,39 +215,6 @@ function renderWeekSummary(data, weeks) {
   document.getElementById("weekSpent").textContent = formatMoney(spent);
   document.getElementById("weekBudget").textContent = formatMoney(budget);
   updateBar("weekBar", spent, budget);
-
-  renderDailySliders(data, week);
-}
-
-function renderDailySliders(data, week) {
-  const wrap = document.getElementById("dailySliders");
-  wrap.innerHTML = "";
-  week.forEach(d => {
-    const dow = DAY_NAMES[d.dow];
-    const value = data.dayBudgets[d.dateKey] || 0;
-    const row = makeSlider(
-      `${dow} ${d.day}`,
-      value,
-      Math.max(data.monthlyTotal, 100),
-      (newVal) => {
-        data.dayBudgets[d.dateKey] = newVal;
-        saveState();
-        // Re-render day cards + week summary amounts without rebuilding sliders.
-        renderWeekSummaryAmounts(data, week);
-        renderDays(data, getWeeksOfMonth(viewYear, viewMonth));
-      }
-    );
-    wrap.appendChild(row);
-  });
-}
-
-// Lightweight update of just the week summary numbers (used during slider drags).
-function renderWeekSummaryAmounts(data, week) {
-  const budget = round2(data.weekBudgets[activeWeekIndex]);
-  const spent = spentInWeek(data, week);
-  setMoney(document.getElementById("weekRemaining"), round2(budget - spent));
-  document.getElementById("weekBudget").textContent = formatMoney(budget);
-  updateBar("weekBar", spent, budget);
 }
 
 function renderDays(data, weeks) {
@@ -273,42 +240,12 @@ function renderDays(data, weeks) {
       `<span class="day-date">${MONTH_NAMES[viewMonth].slice(0, 3)} ${d.day}</span></span>`;
     head.appendChild(remEl);
 
-    const row = document.createElement("div");
-    row.className = "day-row";
-    const input = document.createElement("input");
-    input.type = "number";
-    input.className = "day-spend-input";
-    input.placeholder = "Amount spent";
-    input.min = "0";
-    input.step = "0.01";
-    input.inputMode = "decimal";
-    const addBtn = document.createElement("button");
-    addBtn.className = "add-btn";
-    addBtn.textContent = "Add";
-
-    const addEntry = () => {
-      const amount = parseFloat(input.value);
-      if (!isNaN(amount) && amount !== 0) {
-        if (!data.spending[d.dateKey]) data.spending[d.dateKey] = [];
-        data.spending[d.dateKey].push({ amount: round2(amount), note: "", id: Date.now() });
-        saveState();
-        render();
-      }
-      input.value = "";
-    };
-    addBtn.addEventListener("click", addEntry);
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter") addEntry(); });
-
-    row.appendChild(input);
-    row.appendChild(addBtn);
-
     const meta = document.createElement("div");
     meta.className = "day-meta";
     meta.innerHTML = `<span>Spent: ${formatMoney(spent)}</span>` +
       `<span>Limit: ${formatMoney(dayBudget)}</span>`;
 
     card.appendChild(head);
-    card.appendChild(row);
     card.appendChild(meta);
 
     // Entry list
@@ -320,7 +257,15 @@ function renderDays(data, weeks) {
         const li = document.createElement("li");
         li.className = "entry";
         const left = document.createElement("span");
-        left.textContent = formatMoney(entry.amount);
+        const amt = document.createElement("span");
+        amt.textContent = formatMoney(entry.amount);
+        left.appendChild(amt);
+        if (entry.note) {
+          const note = document.createElement("span");
+          note.className = "entry-note";
+          note.textContent = " · " + entry.note;
+          left.appendChild(note);
+        }
         const del = document.createElement("button");
         del.className = "entry-del";
         del.textContent = "×";
@@ -436,6 +381,55 @@ document.getElementById("menuBtn").addEventListener("click", openDrawer);
 document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
 overlay.addEventListener("click", closeDrawer);
 
+/* ---------- Add-expense dialog ---------- */
+const expenseOverlay = document.getElementById("expenseOverlay");
+const expenseModal = document.getElementById("expenseModal");
+const expenseAmount = document.getElementById("expenseAmount");
+const expenseDate = document.getElementById("expenseDate");
+const expenseNote = document.getElementById("expenseNote");
+
+function openExpenseModal() {
+  expenseAmount.value = "";
+  expenseNote.value = "";
+  expenseDate.value = todayKey(); // default to today
+  expenseOverlay.classList.remove("hidden");
+  expenseModal.classList.remove("hidden");
+  expenseAmount.focus();
+}
+function closeExpenseModal() {
+  expenseOverlay.classList.add("hidden");
+  expenseModal.classList.add("hidden");
+}
+
+document.getElementById("addExpenseBtn").addEventListener("click", openExpenseModal);
+document.getElementById("closeExpense").addEventListener("click", closeExpenseModal);
+expenseOverlay.addEventListener("click", closeExpenseModal);
+
+document.getElementById("expenseForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const amount = parseFloat(expenseAmount.value);
+  const dateStr = expenseDate.value; // "YYYY-MM-DD"
+  if (isNaN(amount) || amount === 0 || !dateStr) return;
+
+  const [y, m, d] = dateStr.split("-").map(Number);
+  // Jump the view to the month/week the expense belongs to so it's visible.
+  viewYear = y;
+  viewMonth = m - 1;
+  const data = getMonthData();
+  const dk = dateKey(y, m - 1, d);
+  if (!data.spending[dk]) data.spending[dk] = [];
+  data.spending[dk].push({ amount: round2(amount), note: expenseNote.value.trim(), id: Date.now() });
+
+  const weeks = getWeeksOfMonth(viewYear, viewMonth);
+  weeks.forEach((week, i) => {
+    if (week.some(x => x.dateKey === dk)) activeWeekIndex = i;
+  });
+
+  saveState();
+  closeExpenseModal();
+  render();
+});
+
 document.getElementById("monthlyTotal").addEventListener("change", (e) => {
   const data = getMonthData();
   const val = round2(parseFloat(e.target.value));
@@ -453,16 +447,6 @@ document.getElementById("resetWeekly").addEventListener("click", () => {
   data.weekBudgets = null;
   data.dayBudgets = {};
   ensureBudgets(data);
-  saveState();
-  render();
-});
-
-document.getElementById("resetDaily").addEventListener("click", () => {
-  const data = getMonthData();
-  const weeks = getWeeksOfMonth(viewYear, viewMonth);
-  const week = weeks[activeWeekIndex];
-  const perDay = round2(data.weekBudgets[activeWeekIndex] / week.length);
-  week.forEach(d => { data.dayBudgets[d.dateKey] = perDay; });
   saveState();
   render();
 });

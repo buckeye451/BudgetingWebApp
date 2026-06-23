@@ -253,9 +253,6 @@ input[type="range"] {
   color: #fff;
 }
 
-.daily-slider-wrap { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
-.daily-slider-wrap h3 { margin: 0 0 4px; font-size: 0.95rem; }
-
 /* Days */
 .days { display: flex; flex-direction: column; gap: 10px; }
 .day-card {
@@ -275,21 +272,6 @@ input[type="range"] {
 .day-date { color: var(--muted); font-size: 0.8rem; margin-left: 6px; }
 .day-remaining { font-weight: 700; font-variant-numeric: tabular-nums; }
 
-.day-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.day-spend-input {
-  flex: 1;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  padding: 10px 12px;
-  font-size: 0.95rem;
-  outline: none;
-}
 .add-btn {
   background: var(--accent);
   border: none;
@@ -333,6 +315,66 @@ input[type="range"] {
 .negative { color: var(--negative); }
 
 .hidden { display: none !important; }
+
+/* Add-expense button in the top bar */
+.add-expense-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.add-expense-btn:hover { filter: brightness(1.1); }
+.add-expense-btn:active { transform: scale(0.94); }
+
+/* Centered modal (add expense) */
+.modal {
+  position: fixed;
+  z-index: 40;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h2 { margin: 0; font-size: 1.1rem; }
+.modal-form { display: flex; flex-direction: column; gap: 6px; padding: 18px; }
+.modal-form label { font-size: 0.85rem; color: var(--muted); margin-top: 10px; }
+.modal-form input[type="text"],
+.modal-form input[type="date"] {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 11px 12px;
+  font-size: 1rem;
+  outline: none;
+}
+.modal-form input:focus { border-color: var(--accent); }
+.modal-submit { margin-top: 18px; width: 100%; padding: 12px; font-size: 1rem; }
+/* Make the native date picker readable on the dark theme */
+.modal-form input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
 
 /* Account section in drawer */
 .account-section .account-row {

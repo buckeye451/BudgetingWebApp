@@ -17,6 +17,7 @@
       <button id="prevMonth" class="icon-btn small" aria-label="Previous month">&#8249;</button>
       <button id="nextMonth" class="icon-btn small" aria-label="Next month">&#8250;</button>
     </div>
+    <button id="addExpenseBtn" class="add-expense-btn" aria-label="Add expense">+</button>
   </header>
 
   <!-- Slide-out settings drawer -->
@@ -86,17 +87,35 @@
         <span>Spent: <span id="weekSpent">$0.00</span></span>
         <span>Budget: <span id="weekBudget">$0.00</span></span>
       </div>
-      <div class="daily-slider-wrap">
-        <h3>Daily allocation for this week</h3>
-        <p class="hint">Slide to set each day's spending limit.</p>
-        <div id="dailySliders" class="slider-list"></div>
-        <button id="resetDaily" class="link-btn">Reset to even split</button>
-      </div>
     </section>
 
     <!-- Days -->
     <section id="days" class="days"></section>
   </main>
+
+  <!-- Add-expense dialog -->
+  <div id="expenseOverlay" class="overlay hidden"></div>
+  <div id="expenseModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="expenseTitle">
+    <div class="modal-header">
+      <h2 id="expenseTitle">Add expense</h2>
+      <button id="closeExpense" class="icon-btn" aria-label="Close">&times;</button>
+    </div>
+    <form id="expenseForm" class="modal-form">
+      <label for="expenseAmount">Amount</label>
+      <div class="money-input">
+        <span class="prefix">$</span>
+        <input type="number" id="expenseAmount" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+      </div>
+
+      <label for="expenseDate">Date</label>
+      <input type="date" id="expenseDate" />
+
+      <label for="expenseNote">Note (optional)</label>
+      <input type="text" id="expenseNote" placeholder="e.g. Groceries" />
+
+      <button type="submit" class="add-btn modal-submit">Add expense</button>
+    </form>
+  </div>
 
   <script src="app.js"></script>
 </body>
