@@ -270,7 +270,7 @@ input[type="range"] {
 }
 .day-name { font-weight: 600; }
 .day-date { color: var(--muted); font-size: 0.8rem; margin-left: 6px; }
-.day-remaining { font-weight: 700; font-variant-numeric: tabular-nums; }
+.day-spent { font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .add-btn {
   background: var(--accent);

@@ -224,33 +224,31 @@ function renderDays(data, weeks) {
   const tk = todayKey();
 
   week.forEach(d => {
-    const dayBudget = data.dayBudgets[d.dateKey] || 0;
     const spent = spentOnDay(data, d.dateKey);
-    const remaining = round2(dayBudget - spent);
+    const entries = data.spending[d.dateKey] || [];
+    const count = entries.length;
 
     const card = document.createElement("div");
     card.className = "day-card" + (d.dateKey === tk ? " today" : "");
 
     const head = document.createElement("div");
     head.className = "day-head";
-    const remEl = document.createElement("span");
-    remEl.className = "day-remaining";
-    setMoney(remEl, remaining);
+    const spentEl = document.createElement("span");
+    spentEl.className = "day-spent";
+    spentEl.textContent = formatMoney(spent);
     head.innerHTML = `<span><span class="day-name">${DAY_NAMES[d.dow]}</span>` +
       `<span class="day-date">${MONTH_NAMES[viewMonth].slice(0, 3)} ${d.day}</span></span>`;
-    head.appendChild(remEl);
+    head.appendChild(spentEl);
 
     const meta = document.createElement("div");
     meta.className = "day-meta";
-    meta.innerHTML = `<span>Spent: ${formatMoney(spent)}</span>` +
-      `<span>Limit: ${formatMoney(dayBudget)}</span>`;
+    meta.textContent = `${count} transaction${count === 1 ? "" : "s"}`;
 
     card.appendChild(head);
     card.appendChild(meta);
 
     // Entry list
-    const entries = data.spending[d.dateKey] || [];
-    if (entries.length) {
+    if (count) {
       const list = document.createElement("ul");
       list.className = "entries";
       entries.forEach(entry => {
