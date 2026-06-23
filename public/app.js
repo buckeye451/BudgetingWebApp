@@ -360,6 +360,8 @@ function renderSettings(data, weeks) {
         // Re-distribute this week's budget evenly across its days.
         const perDay = round2(newVal / week.length);
         week.forEach(d => { data.dayBudgets[d.dateKey] = perDay; });
+        // Monthly total is the sum of the weekly allocations.
+        data.monthlyTotal = round2(data.weekBudgets.reduce((sum, w) => sum + w, 0));
         saveState();
         render();
       }
