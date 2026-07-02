@@ -237,24 +237,33 @@ if (DEBUG) {
             font-size: .85rem; font-weight: 700;
         }
 
-        /* Video card */
+        /* Video card — a fixed 16:9 stage the player fills edge-to-edge */
         .video-shell {
             border-radius: 1rem;
             overflow: hidden;
             box-shadow: 0 1.25rem 3rem rgba(0,0,0,.18);
             background: #0d1117;
             position: relative;
-            min-height: 260px;
+            aspect-ratio: 16 / 9;
         }
-        .video-shell sundaysky-video { display: block; width: 100%; }
+        .video-shell #sskydiv { position: absolute; inset: 0; }
+        .video-shell sundaysky-video,
+        .video-shell video {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain;
+        }
         .video-loading {
             position: absolute; inset: 0;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .75rem;
             color: #cbd5e1;
+            pointer-events: none;
         }
         .video-fallback {
+            position: absolute; inset: 0;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .75rem;
-            min-height: 260px; padding: 2rem; text-align: center; color: #cbd5e1;
+            padding: 2rem; text-align: center; color: #cbd5e1;
         }
         .video-fallback i { font-size: 2.5rem; color: var(--brand-border); }
 
@@ -647,6 +656,10 @@ if (DEBUG) {
                 '</div>';
         }
 
+        function hideLoading() {
+            if (loading) { loading.remove(); loading = null; }
+        }
+
         if (hasVideo && token) {
             try {
                 var player = document.createElement("sundaysky-video");
@@ -654,19 +667,17 @@ if (DEBUG) {
                 player.setAttribute("session", token);
                 player.setAttribute("playsinline", "true");
                 player.setAttribute("poster", "https://play.sundaysky.com/resources/invitation.png");
+                /* Fill the 16:9 stage exactly so the video is never lopsided */
+                player.style.width = "100%";
+                player.style.height = "100%";
                 player.addEventListener("error", showFallback);
+                /* Drop the spinner as soon as the player shows signs of life */
+                ["ssky-video-event", "playing", "canplay", "loadeddata", "click"].forEach(function (evt) {
+                    player.addEventListener(evt, hideLoading);
+                });
                 document.getElementById("sskydiv").appendChild(player);
-                /* Hide the spinner once the player has had a chance to paint */
-                var settle = setInterval(function () {
-                    if (player.offsetHeight > 0) {
-                        if (loading) { loading.remove(); }
-                        clearInterval(settle);
-                    }
-                }, 250);
-                setTimeout(function () {
-                    clearInterval(settle);
-                    if (loading) { loading.remove(); }
-                }, 8000);
+                /* Timeout safety: never leave the spinner up forever */
+                setTimeout(hideLoading, 8000);
             } catch (e) {
                 showFallback();
             }
