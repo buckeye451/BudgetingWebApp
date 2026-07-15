@@ -199,6 +199,14 @@ ENDIF
 
 
 <!DOCTYPE html>
+<!-- ============================================================
+     MAKING A COPY FOR ANOTHER LENDER? Update these:
+       1. Theme colors — the LENDER THEME block at the top of <style>
+       2. Logo — search for "LENDER LOGO" (image URL + link URL)
+       3. Contact details — phone number, support email, privacy policy URL
+       4. Footer — lender name, disclosures, DOFU / form number
+       5. SSJS above — smartVideoDE data extension name, if different
+     ============================================================ -->
 <html lang="en">
    <head>
       <meta charset="utf-8" />
@@ -211,36 +219,44 @@ ENDIF
       <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
       <style>
          /* ============================================================
-            Modern insurance-lander theme
-            - No CSS framework: custom properties + grid/flex only
-            - All icons are inline SVG (crisp at any size, no image hosting)
+            LENDER THEME — EDIT THESE HEX CODES WHEN COPYING THIS PAGE
+            FOR ANOTHER LENDER. Swapping the values below rebrands the
+            entire page; nothing else in the CSS needs to change.
             ============================================================ */
          :root {
-             --ink: #17251e;          /* near-black green for text */
-             --muted: #5b6b62;        /* secondary text */
-             --evergreen: #0e3b2e;    /* primary brand / buttons */
-             --pine: #175943;
-             --leaf: #1f7a4d;         /* accents, eyebrows */
-             --mint: #d9efdd;         /* chips, icon discs */
-             --mint-soft: #edf6ef;    /* tinted bands */
-             --cream: #faf8f4;        /* page background */
-             --card: #ffffff;
-             --line: #e4e0d5;
-             --gold: #e9a13b;         /* stars */
+             /* ----- Brand colors (currently greens) ----- */
+             --brand-primary:       #0e3b2e;  /* solid buttons, final call-to-action band */
+             --brand-primary-hover: #175943;  /* button hover state, text links */
+             --brand-accent:        #1f7a4d;  /* small uppercase headings, checkmarks, icons */
+             --brand-tint:          #d9efdd;  /* chips, icon circles, "Active" badge */
+             --brand-tint-soft:     #edf6ef;  /* tinted section backgrounds */
+             --shadow-color: rgba(14, 59, 46, 0.35);  /* card shadows — brand-primary at ~35% */
+
+             /* ----- Page neutrals (usually fine to leave alone) ----- */
+             --text-color:   #17251e;   /* headings and body text */
+             --text-muted:   #5b6b62;   /* secondary text */
+             --page-bg:      #faf8f4;   /* page background */
+             --header-bg:    rgba(250, 248, 244, 0.92); /* sticky header — match page-bg */
+             --card-bg:      #ffffff;
+             --border-color: #e4e0d5;
+             --star-color:   #e9a13b;   /* testimonial stars */
              --radius: 20px;
          }
+         /* ============================================================
+            End of lender theme. Everything below is layout/structure.
+            ============================================================ */
          * { margin: 0; padding: 0; box-sizing: border-box; }
          html { scroll-behavior: smooth; scroll-padding-top: 92px; }
          @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
          body {
              font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-             background: var(--cream);
-             color: var(--ink);
+             background: var(--page-bg);
+             color: var(--text-color);
              line-height: 1.6;
              -webkit-font-smoothing: antialiased;
          }
          img { max-width: 100%; display: block; }
-         a { color: var(--pine); }
+         a { color: var(--brand-primary-hover); }
          .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
          section { padding: 88px 0; }
          @media (max-width: 760px) { section { padding: 56px 0; } }
@@ -253,7 +269,7 @@ ENDIF
          }
          h1 { font-size: clamp(2.3rem, 4.8vw, 3.5rem); }
          h2 { font-size: clamp(1.7rem, 3.2vw, 2.35rem); margin-bottom: 0.5em; }
-         .lede { font-size: 1.12rem; color: var(--muted); max-width: 60ch; }
+         .lede { font-size: 1.12rem; color: var(--text-muted); max-width: 60ch; }
          .center { text-align: center; }
          .center .lede { margin-left: auto; margin-right: auto; }
          .eyebrow {
@@ -262,7 +278,7 @@ ENDIF
              font-weight: 700;
              letter-spacing: 0.13em;
              text-transform: uppercase;
-             color: var(--leaf);
+             color: var(--brand-accent);
              margin-bottom: 14px;
          }
 
@@ -277,22 +293,22 @@ ENDIF
              font-weight: 600;
              font-size: 1rem;
              text-decoration: none;
-             background: var(--evergreen);
+             background: var(--brand-primary);
              color: #fff;
-             border: 1.5px solid var(--evergreen);
+             border: 1.5px solid var(--brand-primary);
              transition: transform 0.12s ease, background 0.12s ease;
          }
-         .btn:hover { background: var(--pine); border-color: var(--pine); transform: translateY(-1px); }
-         .btn.ghost { background: transparent; color: var(--evergreen); }
-         .btn.ghost:hover { background: var(--mint-soft); }
-         .btn.inverse { background: #fff; color: var(--evergreen); border-color: #fff; }
-         .btn.inverse:hover { background: var(--mint); border-color: var(--mint); }
+         .btn:hover { background: var(--brand-primary-hover); border-color: var(--brand-primary-hover); transform: translateY(-1px); }
+         .btn.ghost { background: transparent; color: var(--brand-primary); }
+         .btn.ghost:hover { background: var(--brand-tint-soft); }
+         .btn.inverse { background: #fff; color: var(--brand-primary); border-color: #fff; }
+         .btn.inverse:hover { background: var(--brand-tint); border-color: var(--brand-tint); }
          .btn.big { padding: 17px 32px; font-size: 1.08rem; }
          .btn svg { flex: 0 0 auto; }
          .micro-trust {
              margin-top: 12px;
              font-size: 0.85rem;
-             color: var(--muted);
+             color: var(--text-muted);
          }
 
          /* ---------- Header ---------- */
@@ -300,10 +316,10 @@ ENDIF
              position: sticky;
              top: 0;
              z-index: 50;
-             background: rgba(250, 248, 244, 0.92);
+             background: var(--header-bg);
              backdrop-filter: blur(10px);
              -webkit-backdrop-filter: blur(10px);
-             border-bottom: 1px solid var(--line);
+             border-bottom: 1px solid var(--border-color);
          }
          .site-head .wrap {
              display: flex;
@@ -320,10 +336,10 @@ ENDIF
              gap: 8px;
              font-weight: 600;
              font-size: 0.95rem;
-             color: var(--ink);
+             color: var(--text-color);
              text-decoration: none;
          }
-         .head-phone:hover { color: var(--leaf); }
+         .head-phone:hover { color: var(--brand-accent); }
          @media (max-width: 640px) {
              .head-phone span { display: none; }
              .site-head .btn { padding: 10px 18px; font-size: 0.92rem; }
@@ -344,8 +360,8 @@ ENDIF
              display: inline-flex;
              align-items: center;
              gap: 8px;
-             background: var(--mint);
-             color: var(--pine);
+             background: var(--brand-tint);
+             color: var(--brand-primary-hover);
              border-radius: 999px;
              padding: 8px 16px;
              font-weight: 600;
@@ -355,7 +371,7 @@ ENDIF
          .hero p.sub {
              margin: 18px 0 8px;
              font-size: 1.15rem;
-             color: var(--muted);
+             color: var(--text-muted);
              max-width: 54ch;
          }
          .hero-points { list-style: none; margin: 18px 0 28px; }
@@ -366,7 +382,7 @@ ENDIF
              padding: 5px 0;
              font-weight: 500;
          }
-         .hero-points svg { flex: 0 0 auto; margin-top: 3px; color: var(--leaf); }
+         .hero-points svg { flex: 0 0 auto; margin-top: 3px; color: var(--brand-accent); }
          .hero-cta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 
          /* Pure-CSS product visual: a "payment card" mock, no images needed */
@@ -375,16 +391,16 @@ ENDIF
              content: "";
              position: absolute;
              inset: -8% -6% -8% 10%;
-             background: radial-gradient(closest-side, var(--mint) 0%, rgba(217, 239, 221, 0) 100%);
+             background: radial-gradient(closest-side, var(--brand-tint) 0%, transparent 100%);
              z-index: 0;
          }
          .mock {
              position: relative;
              z-index: 1;
-             background: var(--card);
-             border: 1px solid var(--line);
+             background: var(--card-bg);
+             border: 1px solid var(--border-color);
              border-radius: 24px;
-             box-shadow: 0 24px 60px -24px rgba(14, 59, 46, 0.35);
+             box-shadow: 0 24px 60px -24px var(--shadow-color);
              padding: 26px;
              max-width: 430px;
              margin-left: auto;
@@ -396,16 +412,16 @@ ENDIF
              justify-content: space-between;
              gap: 12px;
              padding-bottom: 16px;
-             border-bottom: 1px dashed var(--line);
+             border-bottom: 1px dashed var(--border-color);
          }
          .mock-head .t { font-weight: 700; font-size: 1.02rem; }
-         .mock-head .s { font-size: 0.85rem; color: var(--muted); }
+         .mock-head .s { font-size: 0.85rem; color: var(--text-muted); }
          .badge {
              display: inline-flex;
              align-items: center;
              gap: 6px;
-             background: var(--mint);
-             color: var(--pine);
+             background: var(--brand-tint);
+             color: var(--brand-primary-hover);
              font-size: 0.8rem;
              font-weight: 700;
              border-radius: 999px;
@@ -418,7 +434,7 @@ ENDIF
              justify-content: space-between;
              gap: 12px;
              padding: 15px 0;
-             border-bottom: 1px solid var(--mint-soft);
+             border-bottom: 1px solid var(--brand-tint-soft);
          }
          .mock-row:last-of-type { border-bottom: 0; }
          .mock-row .l { display: flex; align-items: center; gap: 12px; }
@@ -426,23 +442,23 @@ ENDIF
              width: 42px;
              height: 42px;
              border-radius: 12px;
-             background: var(--mint-soft);
-             color: var(--pine);
+             background: var(--brand-tint-soft);
+             color: var(--brand-primary-hover);
              display: inline-flex;
              align-items: center;
              justify-content: center;
              flex: 0 0 auto;
          }
          .mock-row .name { font-weight: 600; font-size: 0.98rem; }
-         .mock-row .meta { font-size: 0.82rem; color: var(--muted); }
+         .mock-row .meta { font-size: 0.82rem; color: var(--text-muted); }
          .mock-row .amt { font-weight: 700; }
          .mock-note {
              margin-top: 14px;
-             background: var(--mint-soft);
+             background: var(--brand-tint-soft);
              border-radius: 14px;
              padding: 12px 16px;
              font-size: 0.9rem;
-             color: var(--pine);
+             color: var(--brand-primary-hover);
              display: flex;
              gap: 10px;
              align-items: center;
@@ -450,9 +466,9 @@ ENDIF
 
          /* ---------- Trust strip ---------- */
          .trust {
-             background: var(--mint-soft);
-             border-top: 1px solid var(--line);
-             border-bottom: 1px solid var(--line);
+             background: var(--brand-tint-soft);
+             border-top: 1px solid var(--border-color);
+             border-bottom: 1px solid var(--border-color);
              padding: 26px 0;
          }
          .trust .wrap {
@@ -463,7 +479,7 @@ ENDIF
          }
          @media (max-width: 760px) { .trust .wrap { grid-template-columns: 1fr; gap: 14px; } }
          .trust .stat b { display: block; font-size: 1.02rem; }
-         .trust .stat span { font-size: 0.85rem; color: var(--muted); }
+         .trust .stat span { font-size: 0.85rem; color: var(--text-muted); }
 
          /* ---------- Steps ---------- */
          .steps {
@@ -475,8 +491,8 @@ ENDIF
          }
          @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
          .step {
-             background: var(--card);
-             border: 1px solid var(--line);
+             background: var(--card-bg);
+             border: 1px solid var(--border-color);
              border-radius: var(--radius);
              padding: 30px 28px;
          }
@@ -489,7 +505,7 @@ ENDIF
              width: 40px;
              height: 40px;
              border-radius: 999px;
-             background: var(--evergreen);
+             background: var(--brand-primary);
              color: #fff;
              font-weight: 700;
              font-family: 'Fraunces', Georgia, serif;
@@ -497,7 +513,7 @@ ENDIF
              margin-bottom: 16px;
          }
          .step h3 { font-size: 1.15rem; margin-bottom: 6px; }
-         .step p { color: var(--muted); font-size: 0.98rem; }
+         .step p { color: var(--text-muted); font-size: 0.98rem; }
 
          /* ---------- Coverage cards ---------- */
          .cards3 {
@@ -508,23 +524,23 @@ ENDIF
          }
          @media (max-width: 860px) { .cards3 { grid-template-columns: 1fr; } }
          .cov-card {
-             background: var(--card);
-             border: 1px solid var(--line);
+             background: var(--card-bg);
+             border: 1px solid var(--border-color);
              border-radius: var(--radius);
              padding: 30px 28px;
          }
-         .cov-card .icon-disc { width: 54px; height: 54px; border-radius: 16px; background: var(--mint); margin-bottom: 18px; }
+         .cov-card .icon-disc { width: 54px; height: 54px; border-radius: 16px; background: var(--brand-tint); margin-bottom: 18px; }
          .cov-card h3 { font-size: 1.18rem; margin-bottom: 8px; }
-         .cov-card p { color: var(--muted); font-size: 0.98rem; }
+         .cov-card p { color: var(--text-muted); font-size: 0.98rem; }
 
          /* ---------- Video ---------- */
-         .video-band { background: var(--mint-soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+         .video-band { background: var(--brand-tint-soft); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
          .video-frame {
-             background: var(--card);
-             border: 1px solid var(--line);
+             background: var(--card-bg);
+             border: 1px solid var(--border-color);
              border-radius: 24px;
              padding: 14px;
-             box-shadow: 0 24px 60px -30px rgba(14, 59, 46, 0.35);
+             box-shadow: 0 24px 60px -30px var(--shadow-color);
              max-width: 880px;
              margin: 40px auto 0;
          }
@@ -551,26 +567,26 @@ ENDIF
          }
          @media (max-width: 860px) { .quotes { grid-template-columns: 1fr; } }
          .quote {
-             background: var(--card);
-             border: 1px solid var(--line);
+             background: var(--card-bg);
+             border: 1px solid var(--border-color);
              border-radius: var(--radius);
              padding: 30px 28px;
              display: flex;
              flex-direction: column;
          }
-         .quote .stars { color: var(--gold); letter-spacing: 3px; font-size: 1rem; margin-bottom: 12px; }
+         .quote .stars { color: var(--star-color); letter-spacing: 3px; font-size: 1rem; margin-bottom: 12px; }
          .quote blockquote {
              font-family: 'Fraunces', Georgia, serif;
              font-size: 1.08rem;
              line-height: 1.5;
              flex: 1;
          }
-         .quote figcaption { margin-top: 16px; font-size: 0.88rem; color: var(--muted); font-weight: 600; }
-         .fineprint-inline { margin-top: 28px; font-size: 0.78rem; color: var(--muted); text-align: center; }
+         .quote figcaption { margin-top: 16px; font-size: 0.88rem; color: var(--text-muted); font-weight: 600; }
+         .fineprint-inline { margin-top: 28px; font-size: 0.78rem; color: var(--text-muted); text-align: center; }
 
          /* ---------- FAQ ---------- */
          .faq { max-width: 780px; margin: 36px auto 0; }
-         .faq details { border-bottom: 1px solid var(--line); }
+         .faq details { border-bottom: 1px solid var(--border-color); }
          .faq summary {
              list-style: none;
              cursor: pointer;
@@ -587,19 +603,19 @@ ENDIF
              flex: 0 0 auto;
              width: 28px; height: 28px;
              border-radius: 999px;
-             border: 1.5px solid var(--line);
+             border: 1.5px solid var(--border-color);
              display: inline-flex;
              align-items: center;
              justify-content: center;
-             color: var(--pine);
+             color: var(--brand-primary-hover);
              transition: transform 0.15s ease;
          }
          .faq details[open] summary .plus { transform: rotate(45deg); }
-         .faq .a { padding: 0 4px 24px; color: var(--muted); max-width: 65ch; }
+         .faq .a { padding: 0 4px 24px; color: var(--text-muted); max-width: 65ch; }
 
          /* ---------- Final CTA band ---------- */
          .cta-band {
-             background: var(--evergreen);
+             background: var(--brand-primary);
              color: #fff;
              border-radius: 28px;
              padding: 56px 48px;
@@ -635,11 +651,11 @@ ENDIF
              flex-wrap: wrap;
              align-items: center;
              padding-bottom: 24px;
-             border-bottom: 1px solid var(--line);
+             border-bottom: 1px solid var(--border-color);
              margin-bottom: 24px;
              font-size: 0.9rem;
          }
-         .fineprint { font-size: 0.75rem; line-height: 1.5; color: var(--muted); }
+         .fineprint { font-size: 0.75rem; line-height: 1.5; color: var(--text-muted); }
          .fineprint ul { margin: 6px 0 12px 18px; }
          .fineprint p { margin-bottom: 12px; }
 
@@ -654,7 +670,7 @@ ENDIF
                  z-index: 60;
                  background: rgba(255, 255, 255, 0.96);
                  backdrop-filter: blur(8px);
-                 border-top: 1px solid var(--line);
+                 border-top: 1px solid var(--border-color);
                  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
              }
              .mobile-cta .btn { flex: 1; }
@@ -667,6 +683,7 @@ ENDIF
       <!-- ================= HEADER: logo + phone + single CTA (no exit ramps) ================= -->
       <header class="site-head">
          <div class="wrap">
+            <!-- LENDER LOGO: swap image URL, link URL, and alt text per lender -->
             <a href="https://www.revfcu.com/" target="_blank" aria-label="REV Federal Credit Union">
                <img src="https://image.digitalsolutions.email/lib/fe38117275640479711074/m/1/efb99236-73bf-4b2c-9981-c1d430880410.png" alt="REV Federal Credit Union" />
             </a>
@@ -753,7 +770,7 @@ ENDIF
                               <div class="meta">Everything you need, online</div>
                            </div>
                         </div>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f7a4d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--brand-accent);" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                      </div>
                      <div class="mock-row">
                         <div class="l">
@@ -765,7 +782,7 @@ ENDIF
                               <div class="meta">No long-term commitment</div>
                            </div>
                         </div>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f7a4d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--brand-accent);" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                      </div>
                      <div class="mock-note">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -953,7 +970,7 @@ ENDIF
             <div class="foot-top">
                <div>
                   <strong>REV FCU</strong><br>
-                  <span style="color:var(--muted);">Copyright &copy; 2025 All Rights Reserved</span>
+                  <span style="color:var(--text-muted);">Copyright &copy; 2025 All Rights Reserved</span>
                </div>
                <a href="https://loanprotection.securian.com/rev/?quoteId=830CF28B-DFEA-4CEC-B016-2B87302654DE&resourceToken=3gyxdozgno00c040s400g848ggw0kccgos0sscssgsc0wok84c#/privacy-policy">Privacy Policy</a>
             </div>
