@@ -1,0 +1,761 @@
+%%[
+/*-- 1) Capture incoming URL parameters --*/
+VAR
+@FirstName, @LoanPaymentAmount, @LastName,
+@BorrowerDOB, @OfferDate, @LoanMaturityDate, @LoanNumber,
+@LenderName, @EmailAddress, @UniqueID, @LenderWebsiteURL, @SSKYURL, @PersonalizedLink
+/*-- Use RequestParameter for CloudPagesURL parameters --*/
+SET @FirstName         = RequestParameter("FirstName")
+SET @LoanPaymentAmount = RequestParameter("LoanPaymentAmount")
+SET @LastName          = RequestParameter("LastName")
+SET @BorrowerDOB       = RequestParameter("DateofBirth")
+SET @OfferDate         = RequestParameter("OfferDate")
+SET @LoanMaturityDate  = RequestParameter("LoanMaturityDate")
+SET @LoanNumber        = RequestParameter("LoanNumber")
+SET @EmailAddress      = RequestParameter("EmailAddress")
+SET @UniqueID          = RequestParameter("UniqueID")
+SET @PersonalizedLink         = RequestParameter("PersonalizedLink")
+SET @LenderWebsiteURL  = RequestParameter("LenderWebsiteURL") /* or hardcode it */
+/*-- 2) SundaySky program ID --*/
+SET @SSKYURL = Concat(
+"https://loanprotection.securian.com/rev/",
+"%3FassetType=loan",
+"%26customerFirstName=", URLEncode(@FirstName),
+"%26customerLastName=", URLEncode(@LastName),
+"%26borrowerDateOfBirth=", URLEncode(@BorrowerDOB),
+"%26monthlyLoanPaymentAmount=", URLEncode(@LoanPaymentAmount),
+"%26maturityDate=", URLEncode(@LoanMaturityDate),
+"%26loanNumber=", URLEncode(@LoanNumber),
+"%26customerDataSourceReference=", URLEncode(@UniqueID)
+)
+]%%
+<!-- Output the personalized URL -->
+<!DOCTYPE html>
+<script type="text/javascript" runat="server">
+   Platform.Load( "Core", "1" );
+   var DEBUG = Request.GetQueryStringParameter( "debug" );
+
+   /** Global variables typically hard coded and static depending on the lender and data sources and implementation
+       The variables on the landing page should all start with a lower case letter.
+       If it is a data element in studio the data element is capitalized in the payload **/
+
+   // Credit Union Variables
+   var lenderName = smartVideoData["FromName"]; //Name of the financial institution
+   var lenderNameOS = smartVideoData["FromName"]; //Name of the financial institution as it should appear as on screen
+
+   //Logo of the FI to be used on page - Does not effect smart video creative. Needs to be swapped here for landing page and in Sunday Sky Studio for video changes
+   var lenderLogoImageURL = smartVideoData["ProgramLogo"];
+
+   // URL to be used to take to main site for FI
+   var lenderWebSiteURL = smartVideoData["WebsiteURL"];
+   var lenderBackgroundColor = smartVideoData["BackgroundColor1"];
+
+   //Per creative changes
+   var creativeID = smartVideoData["SmartVideoCreativeID"]; // The creativeID is set to match a creative in SundaySky Studio to populate the correct content set for the video NOT JUST FOR REPORTING IN STUDIO
+   var smartVideoDE = "NewLoan_MBP_Processing";// Data Extension (DE) to pull subscriber specific video content
+   //var smartVideoDE = "NewLoan_MBP_TEST";// Data Extension (DE) to pull subscriber specific video content
+
+   /** Set the field name of the look up data extension key since there is no standard name  this should be the key to the DE being used to look up the subscriber **/
+   var lookUpKeyName = "EmailAddress"; //UniqueMemberID is the default
+
+   var assetURL = "https://sundaysky-authoring-repository.s3.amazonaws.com/assets/";
+
+   /** global variables dynamically set during page load **/
+   var postResult, sskyResponse, video_url, return_code, data, payload, url, smartVideoData, playerToken ;
+
+   /** uniqueMebmerId and subscriberKey are typically interchangeable in system.  Query parameter "u" may not be available depending on implementation
+       and design of email link **/
+   var subscriberKey = Attribute.GetValue( "_subscriberkey" );
+
+   // set @uid = AttributeValue("_SubscriberKey")
+   //set @uid = "wandawitch777@gmail.com"
+
+   //giving a ?u=[uniqueMemberId] or &u=[uniqueMemberId] will override the passed subscriber key
+   var uniqueMemberID = Request.GetQueryStringParameter( "u" ) || subscriberKey ;
+
+   /** global variables specific to this page or implementation **/
+   var showDisclamer;
+
+   //grabs the user agent of the device being used to send to ssky for reporting
+   var userAgent = Platform.Request.UserAgent.toString();
+
+   var payload = '{"repositories":{"hsrc":"https://api.sundaysky.com/resolver/baseurls/0014000000vAjREAA0/883cabbf-0b1a-4e8a-8cb8-df4016291392/prod"},"story":{"hsrc":"","repository":"story","settings":{"output":{"formats":{"video":{"format":"m3u8"}}}}},"data":{"dataElements":{"CreativeID":"","MemberFirstName":""}}}';
+
+
+   try {
+       smartVideoData = Platform.Function.LookupRows(smartVideoDE, lookUpKeyName, uniqueMemberID);
+   } catch (e) {
+       if (DEBUG) {
+           Write("<!--\n\nApp Error: " + Stringify(e) + "\n\n-->");
+       }
+   }
+
+   var obj = Platform.Function.ParseJSON(payload);
+
+   //Sets the story for the video
+   var story = "AmplifyDirect";
+   var actionCode = "";
+
+
+   if ( smartVideoData.length > 0) {
+
+   // This section is using the the row data of the Data Extension (DE) to populate the video data
+   smartVideoData = smartVideoData[0];
+
+   // AmplifyDirect data elements for new program type
+   var memberFirstName = smartVideoData["FirstName"];
+   var newLoan = smartVideoData["NewLoan"];
+   var expiring = smartVideoData["Expiring"];
+   var portfolio = smartVideoData["Portfolio"];
+   var carMake = smartVideoData["VehicleMake"];
+   var carModel = smartVideoData["VehicleModel"];
+   var carYear = smartVideoData["VehicleYear"];
+   var openingType = '';
+   var baseCheckoutURL = smartVideoData["BaseCheckoutURL"];
+   var fullCheckoutURL = smartVideoData["fullCheckoutURL"];
+   if(carMake||carModel||carYear){var vehicle = carYear + " " + carMake + " " + carModel;}
+   // the baseURL will look similar to this https://frankenmuth.accelerate-checkout.com/direct/autofill?[var1] where var1 will be replaced by custom redirect variables
+
+   var button1URL = fullCheckoutURL;
+   var creativeID = smartVideoData["SmartVideoCreativeID"];
+
+   }
+
+   // This starts the JSON to populate the video specific to the subscriber
+   // These should be generic values based on the variables above, generally do not directly change these values
+
+   var vid = Platform.Function.ParseJSON(payload);
+   vid.data.dataElements.CreativeID = creativeID;
+   vid.story.hsrc = story;
+
+   vid.data.dataElements.Marketing = marketingBool;
+   vid.data.dataElements.UniqueMemberID = uniqueMemberID;
+
+   vid.data.dataElements.MemberFirstName = memberFirstName;
+   vid.data.dataElements.Expiring = expiring;
+   vid.data.dataElements.NewLoan = newLoan;
+   vid.data.dataElements.Portfolio = portfolio;
+   vid.data.dataElements.Vehicle = vehicle;
+   //vid.data.dataElements.var1 = button1URL;
+   vid.data.dataElements.var1 = button1URL;
+
+
+
+
+   payload = Stringify(vid);
+
+   //This to the HTML is what sends the posts payload to the player and makes the video work// -------- new API keys for Studio
+   //SF-00000192:dev:5c522c99e7e527a6b817d06c8a0f21bb
+   //SF-00000192:uat:fbbf615f85876fbe37d1a1250af3a92d
+   //SF-00000192:prod:b85985aeeccccbe2acaf3ad972321afd
+   // ##### API keys  for AmplifyDirect#####
+   //SF-00000848:dev:d295dc3da37d68bf6b65b0bb017d3d3b
+   //SF-00000848:uat:db3b8ad77669714571241b2308d8ceba
+   //SF-00000848:prod:7259d385ac028a4aee34686b8cdbd172
+
+   var videoEndpoint = 'https://apis.sundaysky.com/vlx/video';
+   var applicationType = 'application/json';
+   var apiKey = 'SF-00000848:prod:7259d385ac028a4aee34686b8cdbd172';
+   //var apiKey = 'SF-00000848:uat:db3b8ad77669714571241b2308d8ceba';
+   var raasEndpoint = 'https://apis.sundaysky.com/video/prod-009';
+   var returnVar= '';
+   var sskyResponse = postData(videoEndpoint,applicationType,payload,["user-agent","x-api-key","x-ssky-raas-endpoint"],[userAgent,apiKey,raasEndpoint]);
+
+   if ( DEBUG ) {
+       Write(payload);
+       Write( "<!-- \n" );
+       Write( "Subscriber Key: " + subscriberKey + "\n\n" );
+       Write( "UniqueMemberID: " + uniqueMemberID + "\n\n" );
+       Write( "CUID: " + creativeID + "\n\n" );
+       Write( "Data extension row: " + Stringify( smartVideoData ) + "\n\n" );
+       Write( "videoEndpoint: " + videoEndpoint + "\n\n" );
+       Write( "payload: " + payload + "\n\n" );
+       Write( "sskyResponse: " + Stringify(sskyResponse) + "\n\n" );
+       Write("jsonlength: " + jsonlength + "\n\n" );
+       Write("userAgent: " + userAgent + "\n\n" );
+       Write("playerToken: " + playerToken + "\n\n" );
+       Write("obj.playerToken: " + obj.playerToken + "\n\n" );
+       Write( "\n-->\n" );
+   }
+
+   function postData( url, contentType, payload, headers, headerValues ) {
+       var responseString = "",
+       postResult;
+       try {
+           postResult = HTTP.Post( url, contentType, payload, headers, headerValues );
+           var str = postResult.Response.toString();
+           var obj = Platform.Function.ParseJSON(str);
+           playerToken = obj.playerToken;
+           //str = parseVideoURL(str);
+       } catch ( e ) {
+           postResult = { status: "POST Error: " + e, success: false };
+       }
+
+       if ( postResult && postResult.Response && (postResult.StatusCode == 201 || postResult.StatusCode == 200) ) {
+           responseString = postResult.Response.toString();
+       } else {
+           responseString = "ERROR";
+       }
+       return playerToken ; //responseString;
+   }
+</script>
+
+
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+      <meta name="description" content="" />
+      <meta name="author" content="" />
+      <title>Debt Protection Plan</title>
+      <!-- GOOGLE Font -->
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+      <!-- Bootstrap icons-->
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
+      <!-- Bootstrap CSS -->
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+      <!-- CUSTOM STYLES - Securian-inspired theme -->
+      <style>
+         :root {
+             --sec-green: #3f9c35;        /* Securian accent green */
+             --sec-green-dark: #00693c;   /* deep green */
+             --sec-blue: #0083ca;         /* Securian action blue */
+             --sec-blue-dark: #006ba6;
+             --sec-gray-text: #54565a;    /* Securian body/heading gray */
+             --sec-gray-bg: #f2f2f2;      /* page background gray */
+             --sec-footer: #333f48;       /* dark footer */
+         }
+
+         html {
+             scroll-padding-top: 130px; /* account for sticky header */
+             scroll-behavior: smooth;
+         }
+
+         body {
+             font-family: 'Poppins', Arial, sans-serif;
+             color: var(--sec-gray-text);
+             background-color: var(--sec-gray-bg);
+         }
+
+         /* ---------- Header / navigation ---------- */
+         .utility-bar {
+             background: #fff;
+             font-size: 0.85rem;
+         }
+         .utility-bar a {
+             color: var(--sec-gray-text);
+             text-decoration: none;
+             margin-left: 1.5rem;
+         }
+         .utility-bar a:hover { color: var(--sec-green); }
+
+         .brand-bar { background: #fff; }
+         .brand-bar .navbar-brand img { max-height: 56px; }
+
+         /* Green-underline tab navigation, like Securian's audience tabs */
+         .sec-tabs .nav-link {
+             color: var(--sec-gray-text);
+             font-weight: 600;
+             font-size: 0.95rem;
+             padding: 0.75rem 0.25rem;
+             margin: 0 0.9rem;
+             border-bottom: 3px solid transparent;
+             transition: border-color 0.15s ease, color 0.15s ease;
+         }
+         .sec-tabs .nav-link:hover,
+         .sec-tabs .nav-link.active {
+             color: var(--sec-green-dark);
+             border-bottom-color: var(--sec-green);
+         }
+
+         .header-rule { border-top: 2px solid var(--sec-green); margin: 0; opacity: 1; }
+
+         /* ---------- Buttons ---------- */
+         .btn-sec-blue {
+             background-color: var(--sec-blue);
+             border: 1px solid var(--sec-blue);
+             color: #fff;
+             border-radius: 3px;
+             font-weight: 500;
+             padding: 0.55rem 1.4rem;
+         }
+         .btn-sec-blue:hover, .btn-sec-blue:focus {
+             background-color: var(--sec-blue-dark);
+             border-color: var(--sec-blue-dark);
+             color: #fff;
+         }
+         .btn-sec-outline {
+             background: #fff;
+             border: 1px solid var(--sec-blue);
+             color: var(--sec-blue);
+             border-radius: 3px;
+             font-weight: 500;
+             padding: 0.45rem 1.25rem;
+         }
+         .btn-sec-outline:hover, .btn-sec-outline:focus {
+             background: var(--sec-blue);
+             color: #fff;
+         }
+
+         /* ---------- Hero ---------- */
+         .hero {
+             background: var(--sec-gray-bg);
+             padding: 0 0 1.5rem 0;
+         }
+         .hero-frame {
+             position: relative;
+             overflow: hidden;
+             background: linear-gradient(135deg, #e8f3e4 0%, #d9ecd4 100%);
+             min-height: 420px;
+         }
+         .hero-media {
+             position: absolute;
+             inset: 0;
+             text-align: right;
+         }
+         .hero-media img {
+             height: 100%;
+             width: 65%;
+             object-fit: contain;
+             object-position: center right;
+             float: right;
+             padding: 2rem;
+         }
+         /* curved white panel over the left of the hero, like Securian */
+         .hero-panel {
+             position: relative;
+             z-index: 2;
+             background: #fff;
+             width: 46%;
+             min-height: 420px;
+             border-radius: 0 420px 420px 0 / 0 100% 100% 0;
+             display: flex;
+             flex-direction: column;
+             justify-content: center;
+             padding: 3rem 22% 3rem 3rem;
+         }
+         .hero-panel h1 {
+             color: var(--sec-green);
+             font-weight: 700;
+             font-size: 2.4rem;
+             line-height: 1.15;
+         }
+         .hero-tagline {
+             color: var(--sec-gray-text);
+             font-weight: 400;
+             font-size: 1.05rem;
+             margin: 0.75rem 0 1.5rem 0;
+         }
+         @media (max-width: 991.98px) {
+             .hero-frame { min-height: 0; }
+             .hero-media { position: static; background: none; }
+             .hero-media img { width: 100%; height: auto; float: none; padding: 1.5rem; }
+             .hero-panel {
+                 width: 100%;
+                 min-height: 0;
+                 border-radius: 0;
+                 padding: 2rem 1.5rem;
+                 text-align: center;
+             }
+             .hero-panel h1 { font-size: 1.9rem; }
+         }
+
+         /* ---------- Content panels & cards ---------- */
+         .sec-panel {
+             background: #fff;
+             border: 1px solid #e4e4e4;
+             padding: 3rem 2.5rem;
+         }
+         .sec-heading {
+             color: var(--sec-gray-text);
+             font-weight: 600;
+             font-size: 1.9rem;
+         }
+         .sec-subheading {
+             color: var(--sec-gray-text);
+             font-weight: 600;
+             font-size: 1.25rem;
+         }
+         .sec-card {
+             background: #fff;
+             border: 1px solid #e4e4e4;
+             border-radius: 0;
+             height: 100%;
+         }
+         .sec-card .card-img-top {
+             max-height: 190px;
+             object-fit: contain;
+             padding: 1.25rem 1.25rem 0 1.25rem;
+         }
+         .sec-card .card-title {
+             color: var(--sec-gray-text);
+             font-weight: 600;
+             font-size: 1.2rem;
+         }
+         .p_text { font-weight: 300; }
+
+         /* ---------- Video ---------- */
+         .video-container iframe {
+             height: 470px !important;
+             width: 100%;
+             border: 0;
+         }
+         #video { scroll-margin-top: 130px; }
+
+         /* ---------- Testimonials ---------- */
+         .stars i { color: #f2a900; }
+
+         /* ---------- Footer ---------- */
+         .sec-footer {
+             background: var(--sec-footer);
+             color: #fff;
+         }
+         .sec-footer a { color: #cfd8de; }
+         .sec-footer a:hover { color: #fff; }
+         .sec-footer .fineprint {
+             color: #b7c0c6;
+             font-size: 0.75rem;
+             line-height: 1.4;
+         }
+
+         /* Fix for email button overflow on small screens */
+         .email-button {
+             word-break: break-word;
+             white-space: normal;
+             line-height: 1.3;
+             padding: 8px 12px;
+         }
+         @media (max-width: 576px) {
+             .email-button { font-size: 0.85rem; padding: 6px 10px; }
+         }
+         @media (max-width: 480px) {
+             .email-button { font-size: 0.75rem; padding: 5px 8px; }
+             .video-container iframe { height: 330px !important; }
+         }
+      </style>
+   </head>
+   <body class="d-flex flex-column h-100">
+      <main class="flex-shrink-0">
+         <!-- Header: utility bar + brand bar with green-underline tabs (Securian style) -->
+         <div class="sticky-top shadow-sm">
+            <!-- Utility bar -->
+            <div class="utility-bar border-bottom d-none d-lg-block">
+               <div class="container px-5 py-2 text-end">
+                  <a href="tel:1844-495-8955"><i class="bi bi-telephone"></i>&nbsp;844-495-8955</a>
+                  <a href="#contact"><i class="bi bi-envelope"></i>&nbsp;Customer Service</a>
+                  <a href="%%=v(@PersonalizedLink)=%%" target="_blank"><i class="bi bi-person-circle"></i>&nbsp;Get a Quote</a>
+               </div>
+            </div>
+            <!-- Brand bar / navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light brand-bar">
+               <div class="container px-5">
+                  <a class="navbar-brand" href="https://www.revfcu.com/" target="_blank">
+                     <img src="https://image.digitalsolutions.email/lib/fe38117275640479711074/m/1/efb99236-73bf-4b2c-9981-c1d430880410.png" alt="REV Federal Credit Union" class="Rev_logo">
+                  </a>
+                  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center sec-tabs">
+                        <li class="nav-item"><a class="nav-link" href="#video">Video</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#coverage">Coverage</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#products">Testimonials</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                        <li class="nav-item ms-lg-3">
+                           <a class="btn btn-sec-blue" href="%%=v(@PersonalizedLink)=%%" target="_blank">Get a quote</a>
+                        </li>
+                     </ul>
+                  </div>
+               </div>
+            </nav>
+            <hr class="header-rule" />
+         </div>
+
+         <!-- HERO: photo with curved white panel and green headline (Securian style) -->
+         <header id="home" class="hero">
+            <div class="container px-lg-5 pt-4">
+               <div class="hero-frame">
+                  <div class="hero-media d-none d-lg-block">
+                     <img src="https://image.digitalsolutions.email/lib/fe38117275640479711074/m/1/6cd02db0-a301-420f-808f-ebe6dfa58a78.png" alt="Vehicle Protection Products save you from expensive repairs graphic" />
+                  </div>
+                  <div class="hero-panel">
+                     <h1>What is a Debt Protection Plan?</h1>
+                     <p class="hero-tagline">Prepare&nbsp;|&nbsp;Protect&nbsp;|&nbsp;Secure</p>
+                     <div>
+                        <a class="btn btn-sec-blue btn-lg" href="%%=v(@PersonalizedLink)=%%" target="_blank">Protect My Loan</a>
+                     </div>
+                  </div>
+                  <div class="hero-media d-lg-none">
+                     <img src="https://image.digitalsolutions.email/lib/fe38117275640479711074/m/1/6cd02db0-a301-420f-808f-ebe6dfa58a78.png" alt="Vehicle Protection Products save you from expensive repairs graphic" />
+                  </div>
+               </div>
+            </div>
+         </header>
+
+         <!-- INTRO PANEL: "Wrap yourself..." style content block -->
+         <section class="py-4">
+            <div class="container px-lg-5">
+               <div class="sec-panel">
+                  <h2 class="sec-heading mb-3">Protect from the unexpected</h2>
+                  <p class="p_text mb-3">A Debt Protection plan is a monthly subscription product that cancels your monthly loan payments if an unexpected covered event occurs. Protecting you and your loan, and giving you peace of mind.</p>
+                  <p class="p_text mb-0">Take advantage of our easy online process to get instant digital access to your coverage. Cancel anytime.</p>
+               </div>
+            </div>
+         </section>
+
+         <!-- VIDEO SECTION -->
+         <section id="video" class="py-2">
+            <div class="container px-lg-5">
+               <div class="sec-panel p-0">
+                  <div class="video-container">
+                     <iframe
+                        id="d29e239b-8932-407a-ad99-5a3369f510fa"
+                        allowfullscreen>
+                     </iframe>
+                  </div>
+                  <div class="row gx-5 justify-content-center py-4">
+                     <div class="col-lg-4 text-center">
+                        <a class="btn btn-sec-blue btn-lg px-5" href="%%=v(@PersonalizedLink)=%%" target="_blank">Get a Quote</a>
+                     </div>
+                  </div>
+               </div>
+            </div>
+            <script>
+               document.getElementById("d29e239b-8932-407a-ad99-5a3369f510fa").src =
+                 'https://myvideo.sundaysky.com/embed/?programId=d29e239b-8932-407a-ad99-5a3369f510fa' +
+                 (window.location.search ? '&' + window.location.search.substring(1) : '')
+            </script>
+         </section>
+
+         <!-- COVERAGE DETAILS: three cards with outline buttons (Securian style) -->
+         <section id="coverage" class="py-5">
+            <div class="container px-lg-5">
+               <div class="text-center mb-4">
+                  <h2 class="sec-heading">Coverage details</h2>
+               </div>
+               <div class="row gx-4 gy-4 justify-content-center">
+                  <div class="col-lg-4 col-md-6">
+                     <div class="card sec-card">
+                        <img class="card-img-top mx-auto" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/5d99d989-ddd9-44ec-8347-57f316561300.png" alt="Easy Claim Process" />
+                        <div class="card-body p-4 text-center">
+                           <h5 class="card-title mb-3">Easy Claim Process</h5>
+                           <p class="card-text p_text mb-0">
+                              Work directly with your financial institution to get your benefits.
+                           </p>
+                        </div>
+                        <div class="card-footer p-4 pt-0 bg-transparent border-top-0 text-center">
+                           <a class="btn btn-sec-outline" href="#contact">Contact us</a>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-lg-4 col-md-6">
+                     <div class="card sec-card">
+                        <img class="card-img-top mx-auto" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/c855203f-7f6f-4ecb-ba27-e2212265eb04.png" alt="Instant Access" />
+                        <div class="card-body p-4 text-center">
+                           <h5 class="card-title mb-3">Instant Access</h5>
+                           <p class="card-text p_text mb-0">
+                              You have instant digital access to your coverage. You can access everything you need online.
+                           </p>
+                        </div>
+                        <div class="card-footer p-4 pt-0 bg-transparent border-top-0 text-center">
+                           <a class="btn btn-sec-outline" href="%%=v(@PersonalizedLink)=%%" target="_blank">Get started</a>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-lg-4 col-md-6">
+                     <div class="card sec-card">
+                        <img class="card-img-top mx-auto" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/ff934694-dc64-4c62-92a5-3ffc7e5925d1.png" alt="Cancel Anytime" />
+                        <div class="card-body p-4 text-center">
+                           <h5 class="card-title mb-3">Cancel Anytime</h5>
+                           <p class="card-text p_text mb-0">
+                              No long-term commitment, cancel anytime. Deductible may apply.
+                           </p>
+                        </div>
+                        <div class="card-footer p-4 pt-0 bg-transparent border-top-0 text-center">
+                           <a class="btn btn-sec-outline" href="#video">Watch the video</a>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </section>
+
+         <!-- TESTIMONIALS SECTION -->
+         <section id="products" class="py-5" style="background:#e9e9e9;">
+            <div class="container px-lg-5">
+               <div class="text-center mb-4">
+                  <h2 class="sec-heading">Testimonials</h2>
+               </div>
+               <div class="row gx-4 gy-4 justify-content-center">
+                  <!-- Testimonial 1 -->
+                  <div class="col-lg-4 col-md-6">
+                     <div class="card sec-card shadow-sm">
+                        <div class="card-body p-4 text-center">
+                           <div class="stars mb-3">
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                           </div>
+                           <p class="card-text mb-3 p_text">
+                              "For a minimal monthly cost, it gave me and my family the peace of mind that we could afford necessities and pay my loan while I was out of work."
+                           </p>
+                           <small class="text-muted">Protected Customer</small>
+                        </div>
+                     </div>
+                  </div>
+                  <!-- Testimonial 2 -->
+                  <div class="col-lg-4 col-md-6">
+                     <div class="card sec-card shadow-sm">
+                        <div class="card-body p-4 text-center">
+                           <div class="stars mb-3">
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                           </div>
+                           <p class="card-text mb-3 p_text">
+                              "This benefit helped keep my family afloat while being unemployed."
+                           </p>
+                           <small class="text-muted">Protected Customer</small>
+                        </div>
+                     </div>
+                  </div>
+                  <!-- Testimonial 3 -->
+                  <div class="col-lg-4 col-md-6">
+                     <div class="card sec-card shadow-sm">
+                        <div class="card-body p-4 text-center">
+                           <div class="stars mb-3">
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                              <i class="bi bi-star-fill"></i>
+                           </div>
+                           <p class="card-text mb-3 p_text">
+                              "This benefit made it possible to get groceries and pay my insurance premium while I am out of work"
+                           </p>
+                           <small class="text-muted">Protected Customer</small>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <!-- Disclosure Section -->
+               <div class="row justify-content-center mt-4">
+                  <div class="col-lg-10 text-center">
+                     <small class="text-muted p_text" style="font-size: 0.75rem; line-height: 1.4;">
+                     <strong>Disclosure:</strong> Testimonials obtained from customer satisfaction surveys in 2023. Customers are not compensated for providing feedback.
+                     </small>
+                  </div>
+               </div>
+            </div>
+         </section>
+
+         <!-- CONTACT SECTION -->
+         <section id="contact" class="py-5">
+            <div class="container px-lg-5">
+               <div class="sec-panel">
+                  <div class="text-center">
+                     <img class="mx-auto img-fluid" style="max-height:160px;" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/0e63bcfe-e437-403f-bafa-8d4cbe5fc622.png" alt="Contact graphic" />
+                     <h2 class="sec-heading py-3">Any questions? We&rsquo;d love to help</h2>
+                     <p class="lead p_text text-muted mb-5">Reach out to us to see how easy it is to get this protection and peace-of-mind in minutes!</p>
+                  </div>
+                  <div class="row gx-4 gy-4">
+                     <div class="col-lg-6">
+                        <div class="card sec-card">
+                           <img class="card-img-top" style="max-height:220px;" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/1740e1ec-c7cb-44e6-a0d1-e86e58c6f012.png" alt="Email" />
+                           <div class="card-body p-4 text-center">
+                              <h5 class="card-title mb-2">Email us</h5>
+                              <p class="card-text p_text">We&rsquo;re here to help answer your questions.</p>
+                           </div>
+                           <div class="card-footer p-4 pt-0 bg-transparent border-top-0 text-center">
+                              <a class="btn btn-sec-outline email-button" href="mailto:support@subscriptionwarranty.com" target="_blank">support@subscriptionwarranty.com</a>
+                           </div>
+                        </div>
+                     </div>
+                     <div class="col-lg-6">
+                        <div class="card sec-card">
+                           <img class="card-img-top" style="max-height:220px;" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/cc8d84e9-ddc2-404e-aaf4-2373ce28e0c4.png" alt="Phone" />
+                           <div class="card-body p-4 text-center">
+                              <h5 class="card-title mb-2">Call us</h5>
+                              <p class="card-text p_text">Speak with us directly about your coverage.</p>
+                           </div>
+                           <div class="card-footer p-4 pt-0 bg-transparent border-top-0 text-center">
+                              <a class="btn btn-sec-outline" href="tel:1844-495-8955" target="_blank">844-495-8955</a>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </section>
+      </main>
+
+
+      <!-- FOOTER -->
+      <footer class="py-4 mt-auto sec-footer">
+         <div class="container px-5">
+            <div class="row align-items-center justify-content-between flex-column flex-sm-row">
+               <div class="col-auto">
+                  <div class="small m-0 p_text">REV FCU</div>
+                  <div class="small m-0 p_text">Copyright &copy; 2025 All Rights Reserved</div>
+               </div>
+               <div class="col-auto">
+                  <a class="small p_text" href="https://loanprotection.securian.com/rev/?quoteId=830CF28B-DFEA-4CEC-B016-2B87302654DE&resourceToken=3gyxdozgno00c040s400g848ggw0kccgos0sscssgsc0wok84c#/privacy-policy">Privacy Policy</a>
+               </div>
+            </div>
+            <div class="row justify-content-center mt-4">
+               <div class="col-lg-12">
+                  <div class="text-left">
+                     <small class="fineprint p_text">
+                     About Securian Financial:
+                     <ul>
+                        <li>#4 in Credit life and disability sales: Consumer Credit Industry Association (CCIA), The Fact Book of Credit-Related Insurance, June 21, 2023</li>
+                        <li>Remaining data as of November 2023.</li>
+                     </ul>
+                     </small>
+                     <small class="fineprint p_text">
+                     <strong>Disclosure:</strong>
+                     This Product is Optional. Your purchase of the Debt Protection Plan (&ldquo;Plan&rdquo;) is optional. Whether or not you purchase this protection will not affect your application for credit or the terms of any existing credit agreement you have with ABC Credit Union. You may cancel the Plan at any time. There are eligibility requirements, conditions, and exclusions that could prevent you from receiving benefits under the Program. See the Plan Agreement for details.
+
+                     Debt protection is a product of the lender.  Minnesota Life Insurance Company acts as the administrator of the lender&rsquo;s debt protection program. A contractual liability policy may be issued to the lender by Securian Casualty Company, a New York authorized insurer. The lender is independently owned and is not affiliated with Securian Financial.
+
+                       Securian Financial is the marketing name for Securian Financial Group, Inc., and its subsidiaries. Minnesota Life Insurance Company and Securian Casualty Company are subsidiaries of Securian Financial Group, Inc.
+                     </small>
+                     <br>
+                     <small class="fineprint p_text">
+                        DOFU:%%=v(@OfferDate)=%%
+                     <br>
+                     4849187
+                     </small>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </footer>
+
+
+      <!-- Bootstrap core JS-->
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+      <!-- Optional: Add smooth scroll JavaScript for older browsers -->
+      <script>
+         // Smooth scroll for navigation links (for older browsers that don't support CSS scroll-behavior)
+         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+             anchor.addEventListener('click', function (e) {
+                 e.preventDefault();
+                 const target = document.querySelector(this.getAttribute('href'));
+                 if (target) {
+                     const offsetTop = target.offsetTop - 130; // Adjust for sticky header height
+                     window.scrollTo({
+                         top: offsetTop,
+                         behavior: 'smooth'
+                     });
+                 }
+             });
+         });
+      </script>
+   </body>
+</html>
