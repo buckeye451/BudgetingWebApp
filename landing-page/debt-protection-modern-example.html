@@ -205,7 +205,9 @@ ENDIF
        2. Logo — search for "LENDER LOGO" (image URL + link URL)
        3. Contact details — phone number, support email, privacy policy URL
        4. Footer — lender name, disclosures, DOFU / form number
-       5. SSJS above — smartVideoDE data extension name, if different
+       5. Fonts — @font-face src URLs at the top of <style> must point
+          to hosted font files; --font-display/--font-body set the stacks
+       6. SSJS above — smartVideoDE data extension name, if different
      ============================================================ -->
 <html lang="en">
    <head>
@@ -213,11 +215,26 @@ ENDIF
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="description" content="Debt Protection Plan — cancel your monthly loan payments if an unexpected covered event occurs. Get a personalized quote in minutes." />
       <title>Debt Protection Plan</title>
-      <!-- Fonts: Fraunces for display, Inter for UI/body (modern insurtech pairing) -->
+      <!-- Fonts: HurmeGeometricSans3 (self-hosted, below) for display, Inter for body -->
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
       <style>
+         /* ============================================================
+            BRAND FONT — HurmeGeometricSans3 for headings & large text.
+            IMPORTANT: the src URLs below are relative (../fonts/...).
+            Update them to the absolute URL of wherever the font files
+            are hosted for this page. If the files fail to load, the
+            page falls back to the next font in --font-display.
+            ============================================================ */
+         @font-face {
+             font-family: HurmeGeometricSans3;
+             font-weight: 1 500;
+             font-display: swap;
+             src: url(../fonts/hurme-geometric/35856D_D_0.woff2) format("woff2"),
+                  url(../fonts/hurme-geometric/35856D_D_0.ttf) format("truetype");
+         }
+
          /* ============================================================
             LENDER THEME — EDIT THESE HEX CODES WHEN COPYING THIS PAGE
             FOR ANOTHER LENDER. Swapping the values below rebrands the
@@ -241,6 +258,10 @@ ENDIF
              --border-color: #e4e0d5;
              --star-color:   #e9a13b;   /* testimonial stars */
              --radius: 20px;
+
+             /* ----- Fonts ----- */
+             --font-display: 'HurmeGeometricSans3', 'Inter', 'Segoe UI', system-ui, sans-serif; /* headings, buttons, large text */
+             --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;         /* everything else */
          }
          /* ============================================================
             End of lender theme. Everything below is layout/structure.
@@ -249,7 +270,7 @@ ENDIF
          html { scroll-behavior: smooth; scroll-padding-top: 92px; }
          @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
          body {
-             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+             font-family: var(--font-body);
              background: var(--page-bg);
              color: var(--text-color);
              line-height: 1.6;
@@ -262,14 +283,14 @@ ENDIF
          @media (max-width: 760px) { section { padding: 56px 0; } }
 
          h1, h2, .display {
-             font-family: 'Fraunces', Georgia, serif;
-             font-weight: 700;
+             font-family: var(--font-display);
+             font-weight: 500; /* the brand font's heaviest weight */
              line-height: 1.1;
              letter-spacing: -0.01em;
          }
          h1 { font-size: clamp(2.3rem, 4.8vw, 3.5rem); }
          h2 { font-size: clamp(1.7rem, 3.2vw, 2.35rem); margin-bottom: 0.5em; }
-         .lede { font-size: 1.12rem; color: var(--text-muted); max-width: 60ch; }
+         .lede { font-family: var(--font-display); font-size: 1.12rem; color: var(--text-muted); max-width: 60ch; }
          .center { text-align: center; }
          .center .lede { margin-left: auto; margin-right: auto; }
          .eyebrow {
@@ -284,6 +305,7 @@ ENDIF
 
          /* ---------- Buttons ---------- */
          .btn {
+             font-family: var(--font-display);
              display: inline-flex;
              align-items: center;
              justify-content: center;
@@ -369,6 +391,7 @@ ENDIF
              margin-bottom: 18px;
          }
          .hero p.sub {
+             font-family: var(--font-display);
              margin: 18px 0 8px;
              font-size: 1.15rem;
              color: var(--text-muted);
@@ -508,7 +531,7 @@ ENDIF
              background: var(--brand-primary);
              color: #fff;
              font-weight: 700;
-             font-family: 'Fraunces', Georgia, serif;
+             font-family: var(--font-display);
              font-size: 1.15rem;
              margin-bottom: 16px;
          }
@@ -576,7 +599,7 @@ ENDIF
          }
          .quote .stars { color: var(--star-color); letter-spacing: 3px; font-size: 1rem; margin-bottom: 12px; }
          .quote blockquote {
-             font-family: 'Fraunces', Georgia, serif;
+             font-family: var(--font-display);
              font-size: 1.08rem;
              line-height: 1.5;
              flex: 1;

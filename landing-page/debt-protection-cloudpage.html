@@ -199,7 +199,9 @@ SET @SSKYURL = Concat(
        2. Logo — search for "LENDER LOGO" (image URL + link URL)
        3. Contact details — phone number, support email, privacy policy URL
        4. Footer — lender name, disclosures, DOFU / form number
-       5. SSJS above — smartVideoDE data extension name, if different
+       5. Fonts — @font-face src URLs at the top of <style> must point
+          to hosted font files; --font-display/--font-body set the stacks
+       6. SSJS above — smartVideoDE data extension name, if different
      ============================================================ -->
 <html lang="en">
    <head>
@@ -218,6 +220,21 @@ SET @SSKYURL = Concat(
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
       <!-- CUSTOM STYLES - Securian-inspired theme -->
       <style>
+         /* ============================================================
+            BRAND FONT — HurmeGeometricSans3 for headings & large text.
+            IMPORTANT: the src URLs below are relative (../fonts/...).
+            Update them to the absolute URL of wherever the font files
+            are hosted for this page. If the files fail to load, the
+            page falls back to the next font in --font-display.
+            ============================================================ */
+         @font-face {
+             font-family: HurmeGeometricSans3;
+             font-weight: 1 500;
+             font-display: swap;
+             src: url(../fonts/hurme-geometric/35856D_D_0.woff2) format("woff2"),
+                  url(../fonts/hurme-geometric/35856D_D_0.ttf) format("truetype");
+         }
+
          /* ============================================================
             LENDER THEME — EDIT THESE HEX CODES WHEN COPYING THIS PAGE
             FOR ANOTHER LENDER. Swapping the values below rebrands the
@@ -240,6 +257,10 @@ SET @SSKYURL = Concat(
              --band-bg:     #e9e9e9;   /* testimonials band background */
              --star-color:  #f2a900;   /* testimonial stars */
              --footer-bg:   #333f48;   /* dark footer */
+
+             /* ----- Fonts ----- */
+             --font-display: 'HurmeGeometricSans3', 'Poppins', Arial, sans-serif; /* headings, buttons, nav, large text */
+             --font-body:    'Poppins', Arial, sans-serif;                        /* everything else */
          }
          /* ============================================================
             End of lender theme. Everything below is layout/structure.
@@ -250,8 +271,13 @@ SET @SSKYURL = Concat(
              scroll-behavior: smooth;
          }
 
+         h1, h2, h3, h4, h5, h6, .lead, .btn, .sec-tabs .nav-link {
+             font-family: var(--font-display);
+         }
+         h1, h2, h3, h4, h5, h6 { font-weight: 500; } /* the brand font's heaviest weight */
+
          body {
-             font-family: 'Poppins', Arial, sans-serif;
+             font-family: var(--font-body);
              color: var(--text-color);
              background-color: var(--page-bg);
          }
@@ -355,7 +381,7 @@ SET @SSKYURL = Concat(
          }
          .hero-panel h1 {
              color: var(--brand-accent);
-             font-weight: 700;
+             font-weight: 500;
              font-size: 2.4rem;
              line-height: 1.15;
          }
@@ -387,7 +413,7 @@ SET @SSKYURL = Concat(
          }
          .sec-heading {
              color: var(--text-color);
-             font-weight: 600;
+             font-weight: 500;
              font-size: 1.9rem;
          }
          .sec-subheading {
