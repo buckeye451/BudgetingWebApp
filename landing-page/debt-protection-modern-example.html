@@ -28,154 +28,151 @@ SET @SSKYURL = Concat(
 "%26loanNumber=", URLEncode(@LoanNumber),
 "%26customerDataSourceReference=", URLEncode(@UniqueID)
 )
+/*-- 3) Greeting used in the closing call-to-action --*/
+IF EMPTY(@FirstName) THEN
+  SET @CtaGreeting = "Protect"
+ELSE
+  SET @CtaGreeting = Concat(@FirstName, ", protect")
+ENDIF
 ]%%
 <!-- Output the personalized URL -->
 <!DOCTYPE html>
 <script type="text/javascript" runat="server">
    Platform.Load( "Core", "1" );
-   var DEBUG = Request.GetQueryStringParameter( "debug" );
 
-   /** Global variables typically hard coded and static depending on the lender and data sources and implementation
-       The variables on the landing page should all start with a lower case letter.
-       If it is a data element in studio the data element is capitalized in the payload **/
+   /** The whole block is wrapped defensively so the page still renders in
+       CloudPages preview and for anonymous visits, where there is no
+       subscriber context and the Data Extension lookup returns no row. **/
 
-   // Credit Union Variables
-   var lenderName = smartVideoData["FromName"]; //Name of the financial institution
-   var lenderNameOS = smartVideoData["FromName"]; //Name of the financial institution as it should appear as on screen
-
-   //Logo of the FI to be used on page - Does not effect smart video creative. Needs to be swapped here for landing page and in Sunday Sky Studio for video changes
-   var lenderLogoImageURL = smartVideoData["ProgramLogo"];
-
-   // URL to be used to take to main site for FI
-   var lenderWebSiteURL = smartVideoData["WebsiteURL"];
-   var lenderBackgroundColor = smartVideoData["BackgroundColor1"];
-
-   //Per creative changes
-   var creativeID = smartVideoData["SmartVideoCreativeID"]; // The creativeID is set to match a creative in SundaySky Studio to populate the correct content set for the video NOT JUST FOR REPORTING IN STUDIO
-   var smartVideoDE = "NewLoan_MBP_Processing";// Data Extension (DE) to pull subscriber specific video content
-   //var smartVideoDE = "NewLoan_MBP_TEST";// Data Extension (DE) to pull subscriber specific video content
-
-   /** Set the field name of the look up data extension key since there is no standard name  this should be the key to the DE being used to look up the subscriber **/
-   var lookUpKeyName = "EmailAddress"; //UniqueMemberID is the default
-
-   var assetURL = "https://sundaysky-authoring-repository.s3.amazonaws.com/assets/";
-
-   /** global variables dynamically set during page load **/
-   var postResult, sskyResponse, video_url, return_code, data, payload, url, smartVideoData, playerToken ;
-
-   /** uniqueMebmerId and subscriberKey are typically interchangeable in system.  Query parameter "u" may not be available depending on implementation
-       and design of email link **/
-   var subscriberKey = Attribute.GetValue( "_subscriberkey" );
-
-   // set @uid = AttributeValue("_SubscriberKey")
-   //set @uid = "wandawitch777@gmail.com"
-
-   //giving a ?u=[uniqueMemberId] or &u=[uniqueMemberId] will override the passed subscriber key
-   var uniqueMemberID = Request.GetQueryStringParameter( "u" ) || subscriberKey ;
-
-   /** global variables specific to this page or implementation **/
-   var showDisclamer;
-
-   //grabs the user agent of the device being used to send to ssky for reporting
-   var userAgent = Platform.Request.UserAgent.toString();
-
-   var payload = '{"repositories":{"hsrc":"https://api.sundaysky.com/resolver/baseurls/0014000000vAjREAA0/883cabbf-0b1a-4e8a-8cb8-df4016291392/prod"},"story":{"hsrc":"","repository":"story","settings":{"output":{"formats":{"video":{"format":"m3u8"}}}}},"data":{"dataElements":{"CreativeID":"","MemberFirstName":""}}}';
-
+   var DEBUG, playerToken;
 
    try {
-       smartVideoData = Platform.Function.LookupRows(smartVideoDE, lookUpKeyName, uniqueMemberID);
-   } catch (e) {
-       if (DEBUG) {
-           Write("<!--\n\nApp Error: " + Stringify(e) + "\n\n-->");
+       DEBUG = Request.GetQueryStringParameter( "debug" );
+
+       //Per creative changes
+       var smartVideoDE = "NewLoan_MBP_Processing";// Data Extension (DE) to pull subscriber specific video content
+       //var smartVideoDE = "NewLoan_MBP_TEST";// Data Extension (DE) to pull subscriber specific video content
+
+       /** Set the field name of the look up data extension key since there is no standard name  this should be the key to the DE being used to look up the subscriber **/
+       var lookUpKeyName = "EmailAddress"; //UniqueMemberID is the default
+
+       var assetURL = "https://sundaysky-authoring-repository.s3.amazonaws.com/assets/";
+
+       /** subscriber key is unavailable in preview — never let it throw **/
+       var subscriberKey = "";
+       try { subscriberKey = Attribute.GetValue( "_subscriberkey" ); } catch (e) {}
+
+       //giving a ?u=[uniqueMemberId] or &u=[uniqueMemberId] will override the passed subscriber key
+       var uniqueMemberID = Request.GetQueryStringParameter( "u" ) || subscriberKey;
+
+       //grabs the user agent of the device being used to send to ssky for reporting
+       var userAgent = "";
+       try { userAgent = Platform.Request.UserAgent.toString(); } catch (e) {}
+
+       var payload = '{"repositories":{"hsrc":"https://api.sundaysky.com/resolver/baseurls/0014000000vAjREAA0/883cabbf-0b1a-4e8a-8cb8-df4016291392/prod"},"story":{"hsrc":"","repository":"story","settings":{"output":{"formats":{"video":{"format":"m3u8"}}}}},"data":{"dataElements":{"CreativeID":"","MemberFirstName":""}}}';
+
+       var smartVideoData;
+       try {
+           if (uniqueMemberID) {
+               smartVideoData = Platform.Function.LookupRows(smartVideoDE, lookUpKeyName, uniqueMemberID);
+           }
+       } catch (e) {
+           if (DEBUG) {
+               Write("<!--\n\nApp Error: " + Stringify(e) + "\n\n-->");
+           }
        }
-   }
 
-   var obj = Platform.Function.ParseJSON(payload);
+       //Sets the story for the video
+       var story = "AmplifyDirect";
+       var actionCode = "";
 
-   //Sets the story for the video
-   var story = "AmplifyDirect";
-   var actionCode = "";
+       /** defaults keep every later reference defined when no DE row exists (e.g. preview) **/
+       var lenderName = "", lenderNameOS = "", lenderLogoImageURL = "", lenderWebSiteURL = "", lenderBackgroundColor = "";
+       var memberFirstName = "", newLoan = "", expiring = "", portfolio = "", vehicle = "", openingType = "";
+       var baseCheckoutURL = "", fullCheckoutURL = "", button1URL = "", creativeID = "", marketingBool = "";
 
+       if ( smartVideoData && smartVideoData.length > 0 ) {
 
-   if ( smartVideoData.length > 0) {
+           // This section is using the the row data of the Data Extension (DE) to populate the video data
+           var row = smartVideoData[0];
 
-   // This section is using the the row data of the Data Extension (DE) to populate the video data
-   smartVideoData = smartVideoData[0];
+           // Credit Union Variables
+           lenderName = row["FromName"]; //Name of the financial institution
+           lenderNameOS = row["FromName"]; //Name of the financial institution as it should appear as on screen
+           lenderLogoImageURL = row["ProgramLogo"];
+           lenderWebSiteURL = row["WebsiteURL"];
+           lenderBackgroundColor = row["BackgroundColor1"];
 
-   // AmplifyDirect data elements for new program type
-   var memberFirstName = smartVideoData["FirstName"];
-   var newLoan = smartVideoData["NewLoan"];
-   var expiring = smartVideoData["Expiring"];
-   var portfolio = smartVideoData["Portfolio"];
-   var carMake = smartVideoData["VehicleMake"];
-   var carModel = smartVideoData["VehicleModel"];
-   var carYear = smartVideoData["VehicleYear"];
-   var openingType = '';
-   var baseCheckoutURL = smartVideoData["BaseCheckoutURL"];
-   var fullCheckoutURL = smartVideoData["fullCheckoutURL"];
-   if(carMake||carModel||carYear){var vehicle = carYear + " " + carMake + " " + carModel;}
-   // the baseURL will look similar to this https://frankenmuth.accelerate-checkout.com/direct/autofill?[var1] where var1 will be replaced by custom redirect variables
+           // AmplifyDirect data elements for new program type
+           memberFirstName = row["FirstName"];
+           newLoan = row["NewLoan"];
+           expiring = row["Expiring"];
+           portfolio = row["Portfolio"];
+           var carMake = row["VehicleMake"];
+           var carModel = row["VehicleModel"];
+           var carYear = row["VehicleYear"];
+           baseCheckoutURL = row["BaseCheckoutURL"];
+           fullCheckoutURL = row["fullCheckoutURL"];
+           if (carMake || carModel || carYear) { vehicle = carYear + " " + carMake + " " + carModel; }
+           // the baseURL will look similar to this https://frankenmuth.accelerate-checkout.com/direct/autofill?[var1] where var1 will be replaced by custom redirect variables
 
-   var button1URL = fullCheckoutURL;
-   var creativeID = smartVideoData["SmartVideoCreativeID"];
+           button1URL = fullCheckoutURL;
+           creativeID = row["SmartVideoCreativeID"]; // Matches a creative in SundaySky Studio to populate the correct content set for the video
+       }
 
-   }
+       // This starts the JSON to populate the video specific to the subscriber
+       // These should be generic values based on the variables above, generally do not directly change these values
 
-   // This starts the JSON to populate the video specific to the subscriber
-   // These should be generic values based on the variables above, generally do not directly change these values
+       var vid = Platform.Function.ParseJSON(payload);
+       vid.data.dataElements.CreativeID = creativeID;
+       vid.story.hsrc = story;
 
-   var vid = Platform.Function.ParseJSON(payload);
-   vid.data.dataElements.CreativeID = creativeID;
-   vid.story.hsrc = story;
+       vid.data.dataElements.Marketing = marketingBool;
+       vid.data.dataElements.UniqueMemberID = uniqueMemberID;
 
-   vid.data.dataElements.Marketing = marketingBool;
-   vid.data.dataElements.UniqueMemberID = uniqueMemberID;
+       vid.data.dataElements.MemberFirstName = memberFirstName;
+       vid.data.dataElements.Expiring = expiring;
+       vid.data.dataElements.NewLoan = newLoan;
+       vid.data.dataElements.Portfolio = portfolio;
+       vid.data.dataElements.Vehicle = vehicle;
+       vid.data.dataElements.var1 = button1URL;
 
-   vid.data.dataElements.MemberFirstName = memberFirstName;
-   vid.data.dataElements.Expiring = expiring;
-   vid.data.dataElements.NewLoan = newLoan;
-   vid.data.dataElements.Portfolio = portfolio;
-   vid.data.dataElements.Vehicle = vehicle;
-   //vid.data.dataElements.var1 = button1URL;
-   vid.data.dataElements.var1 = button1URL;
+       payload = Stringify(vid);
 
+       //This to the HTML is what sends the posts payload to the player and makes the video work// -------- new API keys for Studio
+       //SF-00000192:dev:5c522c99e7e527a6b817d06c8a0f21bb
+       //SF-00000192:uat:fbbf615f85876fbe37d1a1250af3a92d
+       //SF-00000192:prod:b85985aeeccccbe2acaf3ad972321afd
+       // ##### API keys  for AmplifyDirect#####
+       //SF-00000848:dev:d295dc3da37d68bf6b65b0bb017d3d3b
+       //SF-00000848:uat:db3b8ad77669714571241b2308d8ceba
+       //SF-00000848:prod:7259d385ac028a4aee34686b8cdbd172
 
+       var videoEndpoint = 'https://apis.sundaysky.com/vlx/video';
+       var applicationType = 'application/json';
+       var apiKey = 'SF-00000848:prod:7259d385ac028a4aee34686b8cdbd172';
+       //var apiKey = 'SF-00000848:uat:db3b8ad77669714571241b2308d8ceba';
+       var raasEndpoint = 'https://apis.sundaysky.com/video/prod-009';
+       var sskyResponse = postData(videoEndpoint,applicationType,payload,["user-agent","x-api-key","x-ssky-raas-endpoint"],[userAgent,apiKey,raasEndpoint]);
 
-
-   payload = Stringify(vid);
-
-   //This to the HTML is what sends the posts payload to the player and makes the video work// -------- new API keys for Studio
-   //SF-00000192:dev:5c522c99e7e527a6b817d06c8a0f21bb
-   //SF-00000192:uat:fbbf615f85876fbe37d1a1250af3a92d
-   //SF-00000192:prod:b85985aeeccccbe2acaf3ad972321afd
-   // ##### API keys  for AmplifyDirect#####
-   //SF-00000848:dev:d295dc3da37d68bf6b65b0bb017d3d3b
-   //SF-00000848:uat:db3b8ad77669714571241b2308d8ceba
-   //SF-00000848:prod:7259d385ac028a4aee34686b8cdbd172
-
-   var videoEndpoint = 'https://apis.sundaysky.com/vlx/video';
-   var applicationType = 'application/json';
-   var apiKey = 'SF-00000848:prod:7259d385ac028a4aee34686b8cdbd172';
-   //var apiKey = 'SF-00000848:uat:db3b8ad77669714571241b2308d8ceba';
-   var raasEndpoint = 'https://apis.sundaysky.com/video/prod-009';
-   var returnVar= '';
-   var sskyResponse = postData(videoEndpoint,applicationType,payload,["user-agent","x-api-key","x-ssky-raas-endpoint"],[userAgent,apiKey,raasEndpoint]);
-
-   if ( DEBUG ) {
-       Write(payload);
-       Write( "<!-- \n" );
-       Write( "Subscriber Key: " + subscriberKey + "\n\n" );
-       Write( "UniqueMemberID: " + uniqueMemberID + "\n\n" );
-       Write( "CUID: " + creativeID + "\n\n" );
-       Write( "Data extension row: " + Stringify( smartVideoData ) + "\n\n" );
-       Write( "videoEndpoint: " + videoEndpoint + "\n\n" );
-       Write( "payload: " + payload + "\n\n" );
-       Write( "sskyResponse: " + Stringify(sskyResponse) + "\n\n" );
-       Write("jsonlength: " + jsonlength + "\n\n" );
-       Write("userAgent: " + userAgent + "\n\n" );
-       Write("playerToken: " + playerToken + "\n\n" );
-       Write("obj.playerToken: " + obj.playerToken + "\n\n" );
-       Write( "\n-->\n" );
+       if ( DEBUG ) {
+           Write( "<!-- \n" );
+           Write( "Subscriber Key: " + subscriberKey + "\n\n" );
+           Write( "UniqueMemberID: " + uniqueMemberID + "\n\n" );
+           Write( "CUID: " + creativeID + "\n\n" );
+           Write( "Data extension row: " + Stringify( smartVideoData ) + "\n\n" );
+           Write( "videoEndpoint: " + videoEndpoint + "\n\n" );
+           Write( "payload: " + payload + "\n\n" );
+           Write( "sskyResponse: " + Stringify(sskyResponse) + "\n\n" );
+           Write( "userAgent: " + userAgent + "\n\n" );
+           Write( "playerToken: " + playerToken + "\n\n" );
+           Write( "\n-->\n" );
+       }
+   } catch (e) {
+       // Never break the page render; surface the error as an HTML comment for ?debug=1
+       if (DEBUG) {
+           Write("<!-- page script error: " + Stringify(e) + " -->");
+       }
    }
 
    function postData( url, contentType, payload, headers, headerValues ) {
@@ -687,7 +684,7 @@ SET @SSKYURL = Concat(
          <section class="hero" id="home">
             <div class="wrap">
                <div>
-                  %%[IF NOT EMPTY(@FirstName)]%%
+                  %%[IF NOT EMPTY(@FirstName) THEN]%%
                   <span class="chip">
                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                      Prepared for %%=v(@FirstName)=%%
@@ -742,7 +739,7 @@ SET @SSKYURL = Concat(
                               <div class="meta">Cancelled if a covered event occurs</div>
                            </div>
                         </div>
-                        %%[IF NOT EMPTY(@LoanPaymentAmount)]%%
+                        %%[IF NOT EMPTY(@LoanPaymentAmount) THEN]%%
                         <span class="amt">$%%=v(@LoanPaymentAmount)=%%</span>
                         %%[ENDIF]%%
                      </div>
@@ -932,7 +929,7 @@ SET @SSKYURL = Concat(
          <section id="contact" style="padding-top:0;">
             <div class="wrap">
                <div class="cta-band">
-                  <h2>%%[IF NOT EMPTY(@FirstName)]%%%%=v(@FirstName)=%%, protect%%[ELSE]%%Protect%%[ENDIF]%% your loan in minutes</h2>
+                  <h2>%%=v(@CtaGreeting)=%% your loan in minutes</h2>
                   <p>See how easy it is to get this protection and peace of mind &mdash; get your personalized quote now.</p>
                   <a class="btn big inverse" href="%%=v(@PersonalizedLink)=%%" target="_blank">Get my personalized quote</a>
                   <div class="cta-contacts">
