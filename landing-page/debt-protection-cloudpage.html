@@ -386,7 +386,8 @@ SET @SSKYURL = Concat(
              height: 100%;
          }
          .sec-card .card-img-top {
-             max-height: 190px;
+             max-height: 90px;
+             width: auto;
              object-fit: contain;
              padding: 1.25rem 1.25rem 0 1.25rem;
          }
@@ -398,9 +399,17 @@ SET @SSKYURL = Concat(
          .p_text { font-weight: 300; }
 
          /* ---------- Video ---------- */
+         .video-container {
+             display: flex;
+             justify-content: center;
+             padding: 2rem 1rem 0 1rem;
+         }
          .video-container iframe {
              height: 470px !important;
              width: 100%;
+             max-width: 840px;
+             display: block;
+             margin: 0 auto;
              border: 0;
          }
          #video { scroll-margin-top: 130px; }
@@ -535,7 +544,7 @@ SET @SSKYURL = Concat(
                   <h2 class="sec-heading">Coverage details</h2>
                </div>
                <div class="row gx-4 gy-4 justify-content-center">
-                  <div class="col-lg-4 col-md-6">
+                  <div class="col-lg-3 col-md-5">
                      <div class="card sec-card">
                         <img class="card-img-top mx-auto" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/5d99d989-ddd9-44ec-8347-57f316561300.png" alt="Easy Claim Process" />
                         <div class="card-body p-4 text-center">
@@ -549,7 +558,7 @@ SET @SSKYURL = Concat(
                         </div>
                      </div>
                   </div>
-                  <div class="col-lg-4 col-md-6">
+                  <div class="col-lg-3 col-md-5">
                      <div class="card sec-card">
                         <img class="card-img-top mx-auto" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/c855203f-7f6f-4ecb-ba27-e2212265eb04.png" alt="Instant Access" />
                         <div class="card-body p-4 text-center">
@@ -563,7 +572,7 @@ SET @SSKYURL = Concat(
                         </div>
                      </div>
                   </div>
-                  <div class="col-lg-4 col-md-6">
+                  <div class="col-lg-3 col-md-5">
                      <div class="card sec-card">
                         <img class="card-img-top mx-auto" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/ff934694-dc64-4c62-92a5-3ffc7e5925d1.png" alt="Cancel Anytime" />
                         <div class="card-body p-4 text-center">
@@ -659,14 +668,14 @@ SET @SSKYURL = Concat(
             <div class="container px-lg-5">
                <div class="sec-panel">
                   <div class="text-center">
-                     <img class="mx-auto img-fluid" style="max-height:160px;" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/0e63bcfe-e437-403f-bafa-8d4cbe5fc622.png" alt="Contact graphic" />
+                     <img class="mx-auto img-fluid" style="max-height:90px;" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/0e63bcfe-e437-403f-bafa-8d4cbe5fc622.png" alt="Contact graphic" />
                      <h2 class="sec-heading py-3">Any questions? We&rsquo;d love to help</h2>
                      <p class="lead p_text text-muted mb-5">Reach out to us to see how easy it is to get this protection and peace-of-mind in minutes!</p>
                   </div>
-                  <div class="row gx-4 gy-4">
-                     <div class="col-lg-6">
+                  <div class="row gx-4 gy-4 justify-content-center">
+                     <div class="col-lg-4 col-md-5">
                         <div class="card sec-card">
-                           <img class="card-img-top" style="max-height:220px;" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/1740e1ec-c7cb-44e6-a0d1-e86e58c6f012.png" alt="Email" />
+                           <img class="card-img-top mx-auto" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/1740e1ec-c7cb-44e6-a0d1-e86e58c6f012.png" alt="Email" />
                            <div class="card-body p-4 text-center">
                               <h5 class="card-title mb-2">Email us</h5>
                               <p class="card-text p_text">We&rsquo;re here to help answer your questions.</p>
@@ -676,9 +685,9 @@ SET @SSKYURL = Concat(
                            </div>
                         </div>
                      </div>
-                     <div class="col-lg-6">
+                     <div class="col-lg-4 col-md-5">
                         <div class="card sec-card">
-                           <img class="card-img-top" style="max-height:220px;" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/cc8d84e9-ddc2-404e-aaf4-2373ce28e0c4.png" alt="Phone" />
+                           <img class="card-img-top mx-auto" src="https://image.digitalsolutions.email/lib/fe3711727564047c761277/m/1/cc8d84e9-ddc2-404e-aaf4-2373ce28e0c4.png" alt="Phone" />
                            <div class="card-body p-4 text-center">
                               <h5 class="card-title mb-2">Call us</h5>
                               <p class="card-text p_text">Speak with us directly about your coverage.</p>
