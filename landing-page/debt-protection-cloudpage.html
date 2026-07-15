@@ -400,16 +400,27 @@ SET @SSKYURL = Concat(
 
          /* ---------- Video ---------- */
          .video-container {
-             display: flex;
-             justify-content: center;
              padding: 2rem 1rem 0 1rem;
          }
-         .video-container iframe {
-             height: 470px !important;
+         /* Centered 16:9 shell; the iframe fills it exactly so the player
+            has no leftover space to left-align the video inside */
+         .video-shell {
+             position: relative;
              width: 100%;
              max-width: 840px;
-             display: block;
              margin: 0 auto;
+         }
+         .video-shell::before {
+             content: "";
+             display: block;
+             padding-top: 56.25%; /* 16:9 of the shell's own width */
+         }
+         .video-shell iframe {
+             position: absolute;
+             top: 0;
+             left: 0;
+             width: 100% !important;
+             height: 100% !important;
              border: 0;
          }
          #video { scroll-margin-top: 130px; }
@@ -442,7 +453,6 @@ SET @SSKYURL = Concat(
          }
          @media (max-width: 480px) {
              .email-button { font-size: 0.75rem; padding: 5px 8px; }
-             .video-container iframe { height: 330px !important; }
          }
       </style>
    </head>
@@ -518,10 +528,12 @@ SET @SSKYURL = Concat(
             <div class="container px-lg-5">
                <div class="sec-panel p-0">
                   <div class="video-container">
-                     <iframe
-                        id="d29e239b-8932-407a-ad99-5a3369f510fa"
-                        allowfullscreen>
-                     </iframe>
+                     <div class="video-shell">
+                        <iframe
+                           id="d29e239b-8932-407a-ad99-5a3369f510fa"
+                           allowfullscreen>
+                        </iframe>
+                     </div>
                   </div>
                   <div class="row gx-5 justify-content-center py-4">
                      <div class="col-lg-4 text-center">
